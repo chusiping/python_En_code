@@ -1,8 +1,13 @@
 #coding=utf-8 测试通过：将数组保存为txt，从txt读出数组 2017-12-26
+import os
 class ListTextHelp:
     ipTable = []
     Return_List = []
-    txtFileName = "IpTable.txt"
+    #txtFileName = "IpTable.txt"
+    txtFileName = os.path.abspath('../ip.txt')
+    if not os.path.exists(txtFileName):
+        print '[ '+ str(txtFileName) + ' ] does not exist !'
+        exit()
     def ToText(self):
         if self.ipTable :
             fileObject = open(self.txtFileName, 'w')
