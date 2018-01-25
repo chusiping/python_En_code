@@ -33,10 +33,15 @@ class thd:
     def __init__(self,ListIp = []):
         if ListIp :
             self.__arr = ListIp
+    def CC(self,ip,idx):
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'}
+        req = urllib2.Request(_url2, headers=headers)
+        html_doc = urllib2.urlopen(req).read()
     def ckid(self,ip,idx):
         try:
             # starttime = datetime.datetime.now()
-            r = requests.get('http://www.baidu.com/', proxies={"http": 'http://' + ip})
+            r = requests.get('http://www.winshang.com/zt/51list.aspx', proxies={"http": 'http://' + ip})
             # print r.text
             # endtime = datetime.datetime.now()
             # timecha = (endtime - starttime).seconds
