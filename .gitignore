@@ -5,3 +5,4 @@
 /python35/.idea
 *.pyc
 /python27/temp
+/python27/log
