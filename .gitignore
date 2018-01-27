@@ -1,3 +1,7 @@
 /python27/.idea
+
 /python27/cc/*.pyc
+
 /python35/.idea
+*.pyc
+/python27/temp

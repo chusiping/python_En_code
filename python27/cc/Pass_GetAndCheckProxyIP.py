@@ -1,8 +1,6 @@
 #coding=utf-8 测试通过：1 调取其他py文件里的函数方法，获取代理的IP列表，写入txt文件  2018-1-23 修改
 #                       2 多线程验证代理ip的可用性，
-from bs4 import BeautifulSoup
-from time import ctime,sleep
-import urllib2, requests,datetime,threading,thread
+import urllib2, requests,threading
 import Pass_getIPsFunction
 import telnetlib,os
 if not os.path.exists('../temp'):
