@@ -6,26 +6,27 @@ import os
 ######## 定义接口
 url_1 = 'http://hqquery.jrj.com.cn/hqstat.do?sort=pl&page=1&size=30&order=desc&disps=d1,d2,d3,d4,d5&disattrs=pl,tr,sl&sortp=d5&_dc=1528770858381'
 url_2 = 'http://hqquery.jrj.com.cn/alxzd.do?sort=day&page=1&size=30&order=desc&isup=1&_dc=1528770858382'
+url_3 = 'http://hqquery.jrj.com.cn/upindex.do?sort=pl&page=1&size=30&order=desc&_dc=1530019016934'
 r = requests.get(url_1)
 r2 = requests.get(url_2)
-
+r3 = requests.get(url_3)
 ######## 正则过滤
 pattern  = re.compile(r'("\d{6}")')
-r = pattern.findall(r.text+r2.text)
+r = pattern.findall(r.text+r2.text+r3.text)
 r = list(set(r)) #去重
 
 ######## 定义blk文件
 lxsz_blk = "D:\\" + u"中国银河证券海王星2017" + "\\T0002\\blocknew\\ZXG_882f6b072c.blk"
 dxg_blk = "D:\\" + u"中国银河证券海王星2017" + "\\T0002\\blocknew\\DXG.blk"
 ######## 读取lxsz.blk原有的数据
-file = open(lxsz_blk)
-for id, line in enumerate(file):
-    line = line.replace("\n", "")
-    line = '"'+line[1:7]+'"'
-    if line not in r:   # 检查旧的代码和接口里的是否重复
-        print str(id) + " : " + line
-        r.append(line)
-file.close()
+# file = open(lxsz_blk)
+# for id, line in enumerate(file):
+#     line = line.replace("\n", "")
+#     line = '"'+line[1:7]+'"'
+#     if line not in r:   # 检查旧的代码和接口里的是否重复
+#         print str(id) + " : " + line
+#         r.append(line)
+# file.close()
 
 ######## 循环写入
 fileObject = open(lxsz_blk, 'w')
