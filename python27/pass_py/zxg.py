@@ -47,15 +47,15 @@ for id, code in enumerate(r2):
 fileObject.close()
 print u'板块股-股票加入操作完成'
 ########置顶股
-fileObject = open(DXG_blk, 'w')
-for id, code in enumerate(r3):
-    code = code.replace('"','')
-    qianz = "0"
-    if code[0] == "6":
-        qianz = "1"
-    code = qianz + code
-    fileObject.write(code)
-    fileObject.write('\n')
-    print str(id)+" : "+code
-fileObject.close()
-print u'短线置顶股-股票加入操作完成'
+# fileObject = open(DXG_blk, 'w')
+# for id, code in enumerate(r3):
+#     code = code.replace('"','')
+#     qianz = "0"
+#     if code[0] == "6":
+#         qianz = "1"
+#     code = qianz + code
+#     fileObject.write(code)
+#     fileObject.write('\n')
+#     print str(id)+" : "+code
+# fileObject.close()
+# print u'短线置顶股-股票加入操作完成'
