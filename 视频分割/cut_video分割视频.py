@@ -37,7 +37,7 @@ if remainder != 0:
     c += 1
 
 
-# ffmpeg_path = 'D:\lvse\ffmpeg\bin\ffmpeg.exe'
+ffmpeg_path = r'D:\lvse\ffmpeg\bin\ffmpeg.exe'
 
 for i in range(c):
     star = i*b
@@ -45,6 +45,7 @@ for i in range(c):
     se = f"{convert_to_time(star)} ~ {convert_to_time(end)}"
     new_filepath = os.path.join(os.path.dirname(sourceFile), f'{file_name}_{i}' + file_extension)
     ff = ffmpy.FFmpeg(
+        executable=ffmpeg_path,
         inputs={sourceFile: None},
         outputs={new_filepath: [
             '-ss', f'{convert_to_time(star)}',
@@ -54,6 +55,7 @@ for i in range(c):
     )
     if remainder != 0 and c== i+1 :
         ff = ffmpy.FFmpeg(
+            executable=ffmpeg_path,
             inputs={sourceFile: None},
             outputs={new_filepath: [
                 '-ss', f'{convert_to_time(star)}',
