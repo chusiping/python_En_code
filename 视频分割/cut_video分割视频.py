@@ -14,7 +14,7 @@ def convert_to_time(seconds):
     time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
     return time_str
 
-sourceFile = input("请输入视频文件：")
+sourceFile = input("请输入视频文件：").replace('"', '')
 time_str1 = input("请输入视频总时长（格式为 HH:MM:SS）：")
 time_str2 = input("请输入第二个时间值（格式为 HH:MM:SS）：")
 
@@ -65,4 +65,4 @@ for i in range(c):
     print(ff.cmd)
 
 
-
+print("分割完成！")
