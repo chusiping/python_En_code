@@ -33,7 +33,7 @@ def get_video_duration(video_path):
 
 sourceFile = input("请输入视频文件：").replace('"', '')
 time_str1 = get_video_duration(sourceFile)   
-time_str2 = input("请输入第二个时间值（格式为 HH:MM:SS）：")
+time_str2 = input("请输入分割时长（格式为 HH:MM:SS）：")
      
 
 # sourceFile = r'C:\Users\Administrator\Desktop\新建文件夹\a.mp4'
