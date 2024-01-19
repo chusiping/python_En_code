@@ -1,0 +1,17 @@
+### 测试成功
+POST http://localhost:5000/api/completion
+Content-Type: application/json
+
+{"prompt": "鲁迅的著作"}
+
+
+
+
+
+
+
+
+
+
+
+
