@@ -12,7 +12,7 @@ def SoupFindIp(html_doc, idx, ips):
     try:
         trs = soup.find('table').find_all('tr')
     except:
-        # print("soup.find('table') failed")
+        print  "soup.find('table') failed !"
         return
     for tr in trs[1:]:
         tds = tr.find_all('td')
@@ -30,7 +30,7 @@ def GetProxyIpFromTag(html_doc,idx, ips):
     try:
         trs = soup.find_all(name=target_txt, attrs={"class": re.compile(r"" + attName + "(\s\w+)?")})
     except:
-        print("li.parent.find failed !")
+        print "li.parent.find failed !"
         return
     for li in trs:
         ip =li.parent.find_previous_sibling().get_text()
@@ -59,7 +59,7 @@ def Urlopen(_url2):
 def OpenReadTxt(TxtFilePath):
     ProxySiteList = os.path.abspath(TxtFilePath)
     if not os.path.exists(ProxySiteList):
-        print(TxtFilePath + ' - ERROR !')
+        print TxtFilePath + ' - ERROR !'
         exit()
     arr_line=[]
     file = open(ProxySiteList)
@@ -88,4 +88,4 @@ if __name__ == '__main__':
     # rt4 = RequestsGetByProxy("http://www.winshang.com/index.html",{"http": "http://221.7.255.167:8080"})
     # rt5 = OpenReadTxt('../cc/ProxySiteList.txt')
     rt6 = UrlsFromTxt('../cc/ProxySiteList.txt')
-    print(rt6)
+    print rt6

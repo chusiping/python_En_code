@@ -6,6 +6,4 @@
 *.pyc
 /python27/temp
 /python27/log
-/cv2
-/training
-/python35/temp
+
