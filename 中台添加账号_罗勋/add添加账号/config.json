@@ -1,0 +1,13 @@
+{
+  "userNo": "",
+  "searchUrl": "https://eip.gzqiaoyin.com/jsaas/sys/org/osUser/search.do",
+  "joinUserUrl": "https://eip.gzqiaoyin.com/jsaas/sys/org/osUser/joinUser.do",
+  "userId": "",
+  "groupIdJCJS": "670407252028801150",
+  "groupIdZN": "1277442862922743814",
+  "groupIdXMZJL": "1277442862922743815",
+  "groupIdXMFZJL": "1277442862922743818",
+  "groupIdCBGB": "1277442862922743936",
+  "cookie": "loginAction=; instType=PLATFORM; JSESSIONID=3A964057FBB36A4698E6FEC9682BD774; logInOutId=2499284883097422557; enabled=false; cna=jMO0HT3QVR8CAXkgMLGZ8UTx",
+  "referer": "https://eip.gzqiaoyin.com/jsaas/sys/org/sysOrg/mgr.do?_t=204919&_winid=w9087"
+}
