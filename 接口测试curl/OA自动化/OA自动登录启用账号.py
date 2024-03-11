@@ -1,7 +1,10 @@
 import requests
 import json
+from PIL import Image
 from io import BytesIO
+import time
 session=requests.Session()
+host = 'http://172.18.197.10:9099'
 
 
 def 显示在线验证码图_session方式(Session,_url):
@@ -16,13 +19,11 @@ def 显示在线验证码图_session方式(Session,_url):
         raise RuntimeError("Failed to fetch image")
 
 
-url = 'http://172.18.197.10:9099/api/hrm/systeminfo/save'
+
 
 
 def send_curl_request():
-
     login_url = 'http://172.18.197.10:9099/api/hrm/login/checkLogin'  #
-    session = requests.Session()
     login_data = {
         "islanguid": "7",
         "loginid": "sysadmin",
@@ -38,7 +39,6 @@ def send_curl_request():
         "service": "",
         "isRememberPassword": "false"
     }
-
     response = session.post(login_url, data=login_data)
     decoded_data = response.content.decode('unicode-escape').encode('latin1').decode('utf8')
     json_data = json.loads(decoded_data)
@@ -48,10 +48,13 @@ def send_curl_request():
     # 检查登录是否成功
     if response.status_code == 200:
         for i in range(1):
-                url_ = 'http://172.18.197.10:9099/weaver/weaver.file.MakeValidateCode?isView=1&validatetype=0&validatenum=4&seriesnum_=1709689420493'
+                url_ = host + '/weaver/weaver.file.MakeValidateCode?isView=1&validatetype=0&validatenum=4&seriesnum_=1709689420493'
+                current_timestamp = str(int(time.time() * 1000))
+                url_ = url_.replace('1709689420493', current_timestamp)
                 user_input = 显示在线验证码图_session方式(session,url_)
                 payload={'id': '110954','needauto': '0','enableDate': '2024-03-06','enableUsbType': '0','loginid': '00191514','passwordlock': '0','password': 'qwertyuiop','password1': 'qwertyuiop','clAuthtype': '','usbstate': '0','tokenKey': '','serial': '','startUsing': '','seclevel': '60','useSecondaryPwd': '0','validatecode': user_input }
                 print(payload)
+                url = host + '/api/hrm/systeminfo/save'
                 response = session.post(url, data=payload)
                 decoded_data = response.content.decode('unicode-escape').encode('latin1').decode('utf8')
                 json_data = json.loads(decoded_data)
