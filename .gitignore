@@ -6,4 +6,12 @@
 *.pyc
 /python27/temp
 /python27/log
-
+/training/logs
+/training/data/captcha/result
+/training/preprocess/
+/training/data/captcha/test
+接口测试curl/OA自动化/module
+接口测试curl/OA自动化/build
+接口测试curl/OA自动化/__pycache__
+接口测试curl/OA自动化/dist
+*.spec
