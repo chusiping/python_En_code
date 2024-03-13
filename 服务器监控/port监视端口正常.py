@@ -4,10 +4,10 @@ from datetime import datetime
 import json
 import requests
 import sys
+import threading
 
-def send_alert_message(obj):
+def send_alert_message(obj,content = "端口访问错误"):
     url = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=a6089c2e-3a3f-404a-bbd7-61e9d0d838ce"
-    content = "端口访问错误"
     current_time = datetime.now()
     payload = {
         "msgtype": "markdown",
@@ -30,7 +30,7 @@ def check_port(ip, port):
             s.settimeout(1)  
             s.connect((ip, port))
     except socket.error:
-        send_alert_message(f"{ip} - {port} is closed")
+        send_alert_message(f"{ip} {port} is closed")
         print(f"Port {port} is closed on {ip}")
 
 def p_time():
@@ -38,7 +38,7 @@ def p_time():
     print("ready to touch port ...:", current_time.strftime("%Y-%m-%d %H:%M:%S"))
 
 
-def start():
+def loop1():
     while True:
         p_time()
         with open('data4.txt', 'r') as file:
@@ -50,7 +50,16 @@ def start():
         print("Waiting for 5 minutes will check again ...\n")
         time.sleep(300)  
 
+def loop2():
+    while True:
+        send_alert_message("心跳检测",content = "")
+        print("下发短信：心跳检测\n")
+        time.sleep(86400)  
 
-start()
+thread1 = threading.Thread(target=loop1)
+thread2 = threading.Thread(target=loop2)
+
+thread1.start()
+thread2.start()
 
 
