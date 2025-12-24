@@ -59,13 +59,14 @@ def main():
     # 服务器配置
     SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
     SERVER_PORT = 6608                      # 25209                          6608
-    SEND_TO_SERVER = True                   # 是否发送到服务器
+    SEND_TO_SERVER = False                   # 是否发送到服务器
     _terminal_phone = "13301110130"         # 车牌号 "13305131386"  14926873647
-    process_count = 200                       # 处理前2行数据
+    process_count = 3                       # 处理前2行数据
     _altitude_A = 10                        # 海拔
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
+    _excleFile = "excle/轨迹列表.xlsx"
     # print("=" * 60)
     # print("808协议数据包生成与TCP发送系统")
 
@@ -78,7 +79,7 @@ def main():
     
     # 1. 读取Excel数据
     print("\n[1] 读取Excel数据...")
-    excel_data = readdate.read_excel_to_array("轨迹列表.xlsx")
+    excel_data = readdate.read_excel_to_array(_excleFile)
     
     if not excel_data:
         print("读取数据失败，程序退出")
