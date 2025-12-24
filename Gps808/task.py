@@ -5,25 +5,30 @@ import multiprocessing
 import os
 
 # 任务配置：每个任务对应一个main.py实例
+
+SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
+SERVER_PORT = 6608                      # 25209   
+SEND_TO_SERVER = False 
+
 TASKS = [
     {
         "name": "任务1-车队A",
-        "excel_file": r"E:\data\fleet_a.xlsx",  # 完整路径
+        "excel_file": r"excle\轨迹列表_A.xlsx",  # 完整路径
         "params": {
-            "server_ip": "192.168.1.100",
-            "server_port": "8080",
-            "terminal_prefix": "A"
+            "server_ip": SERVER_IP,
+            "server_port": SERVER_PORT,
+            "terminal_phone": "13301110130"
         },
         "start_time": "09:00:00",  # 每天开始时间
         "description": "处理车队A的数据"
     },
     {
         "name": "任务2-车队B", 
-        "excel_file": r"E:\data\fleet_b.xlsx",
+        "excel_file": r"excle\轨迹列表_B.xlsx",
         "params": {
-            "server_ip": "192.168.1.101",
-            "server_port": "8081", 
-            "terminal_prefix": "B"
+            "server_ip": SERVER_IP,
+            "server_port": SERVER_PORT, 
+            "terminal_phone": "13301110130"
         },
         "start_time": "09:30:00",
         "description": "处理车队B的数据"
@@ -52,7 +57,7 @@ def run_main_process(task_config, log_dir="logs"):
         "--excel", excel_file,
         "--server-ip", params["server_ip"],
         "--server-port", params["server_port"],
-        "--prefix", params["terminal_prefix"]
+        "--prefix", params["terminal_phone"]
     ]
     
     print(f"[{datetime.now()}] 启动任务: {task_name}")
