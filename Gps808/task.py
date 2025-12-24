@@ -8,7 +8,7 @@ import os
 
 SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
 SERVER_PORT = 6608                      # 25209   
-SEND_TO_SERVER = False 
+SEND_TO_SERVER = False                  # 是否真发送
 
 TASKS = [
     {
@@ -97,21 +97,50 @@ def run_main_process(task_config, log_dir="logs"):
     print(f"[{datetime.now()}] 任务完成: {task_name}, 退出代码: {return_code}")
     return return_code
 
-def wait_until(target_time):
+def wait_until(target_time, check_interval=1):
     """
-    等待到指定时间
-    """
+    等待到指定时间，显示动态倒计时
+    """   
     now = datetime.now()
     target = datetime.strptime(target_time, "%H:%M:%S")
     target = now.replace(hour=target.hour, minute=target.minute, second=target.second)
     
     if target < now:
-        # 如果目标时间已过，推到明天
         target = target.replace(day=target.day + 1)
     
     wait_seconds = (target - now).total_seconds()
-    print(f"等待 {wait_seconds:.1f} 秒直到 {target_time}...")
-    time.sleep(wait_seconds)
+    
+    # 如果等待时间很长（超过10秒），显示动态倒计时
+    if wait_seconds > 10:
+        print(f"\n等待到 {target_time}...")
+        print("-" * 40)
+        
+        last_update = 0
+        while wait_seconds > 0:
+            current_time = time.time()
+            
+            # 每1秒更新一次显示（不要更新太频繁）
+            if current_time - last_update >= 1:
+                # 计算剩余时间
+                hours = int(wait_seconds // 3600)
+                minutes = int((wait_seconds % 3600) // 60)
+                seconds = int(wait_seconds % 60)
+                
+                # 清除当前行，重新输出
+                print(f"\r剩余时间: {hours:02d}:{minutes:02d}:{seconds:02d} | "
+                      f"预计开始: {target.strftime('%Y-%m-%d %H:%M:%S')}", 
+                      end="", flush=True)
+                
+                last_update = current_time
+            
+            # 小睡一下，减少CPU占用
+            time.sleep(0.1)
+            wait_seconds -= 0.1
+        
+        print()  # 换行
+    else:
+        # 短时间等待直接sleep
+        time.sleep(wait_seconds)
     
 def main():
     """
