@@ -5,6 +5,7 @@ import time
 import temp
 import testdate
 import random
+import argparse
 
 def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608):
     """
@@ -56,19 +57,39 @@ def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608)
                 pass
 
 def main():
-    # 服务器配置
+    # 服务器配置(独立测试使用)==============================================
+    _excleFile = "excle/轨迹列表.xlsx"    
+    _terminal_phone = "13301110130"         # 车牌号 "13305131386"  14926873647    
     SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
     SERVER_PORT = 6608                      # 25209                          6608
     SEND_TO_SERVER = False                   # 是否发送到服务器
-    _terminal_phone = "13301110130"         # 车牌号 "13305131386"  14926873647
+
     process_count = 3                       # 处理前2行数据
     _altitude_A = 10                        # 海拔
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
-    _excleFile = "excle/轨迹列表.xlsx"
-    # print("=" * 60)
-    # print("808协议数据包生成与TCP发送系统")
+
+    # 使用外部参数传入使用 ==================================================
+    # 范例：python main.py --excel "excle/轨迹列表.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 
+    parser = argparse.ArgumentParser(description='JT808数据发送')
+    parser.add_argument('--excel', required=True, help='Excel文件路径')
+    parser.add_argument('--phone', required=True, help='终端号码')
+    parser.add_argument('--server-ip', required=True, help='服务器IP')
+    parser.add_argument('--server-port', type=int, required=True, help='服务器端口')
+    # parser.add_argument('--prefix', default='', help='终端前缀')
+    # parser.add_argument('--log-level', default='INFO', help='日志级别')
+
+    args = parser.parse_args()
+
+    _excleFile = args.excel    
+    _terminal_phone = args.phone           
+    SERVER_IP = args.server_ip               
+    SERVER_PORT = args.server_port    
+
+    print(f"开始处理 Excel: {_excleFile}")
+    print(f"终端号码: {_terminal_phone}")
+    print(f"连接服务器: {SERVER_IP}:{SERVER_PORT}")
 
     
     if SEND_TO_SERVER:
@@ -156,7 +177,7 @@ def main():
                 satellite_count
             )
             parsed = testdate.parse_gps_packet(packet.hex().upper())
-            testdate.pretty_print(parsed)
+            # testdate.pretty_print(parsed)
 
             
             if not packet:
@@ -183,7 +204,7 @@ def main():
             else:
                 success_count += 1
                 print(f"\nⓘ 演示模式: 跳过发送")
-                print(f"   数据包HEX: \n   {packet.hex().upper()}")
+                # print(f"   数据包HEX: \n   {packet.hex().upper()}")
             
             # 添加延时，避免发送过快
             if i < min(process_count, total_rows) - 1:  # 不是最后一条
