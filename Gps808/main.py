@@ -77,14 +77,11 @@ def main():
     parser.add_argument('--phone', required=True, help='终端号码')
     parser.add_argument('--server-ip', required=True, help='服务器IP')
     parser.add_argument('--server-port', type=int, required=True, help='服务器端口')
-    parser.add_argument('--send', dest='is_SEND', action='store_true', 
-                        help='真实发送数据到服务器（默认不发送）')
-    parser.add_argument('--no-send', dest='is_SEND', action='store_false',
-                        help='测试模式，不实际发送')
+    parser.add_argument('--send', dest='is_SEND', action='store_true',help='真实发送数据')
+    parser.add_argument('--no-send', dest='is_SEND', action='store_false',help='测试模式不实际发送')
     parser.set_defaults(is_SEND=False)  # 默认值
 
     args = parser.parse_args()
-
     _excleFile = args.excel    
     _terminal_phone = args.phone           
     SERVER_IP = args.server_ip               
