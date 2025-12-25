@@ -5,6 +5,17 @@ import multiprocessing
 import os
 import locale
 
+# 仅此一行，全平台有效，0延迟
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+# 可选：Windows控制台优化（try保护，Linux自动跳过）
+try:
+    import ctypes
+    ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+except:
+    pass  # Linux上自动忽略，无需平台检查
+
+
 # 任务配置：每个任务对应一个main.py实例
 
 SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
@@ -34,10 +45,6 @@ TASKS = [
 ]
 
 def run_main_process(task_config, log_dir="logs"):
-    
-    # 获取系统默认编码
-    system_encoding = locale.getpreferredencoding()
-    print(f"系统编码: {system_encoding}")  # 通常是 'cp936' 或 'gbk'
     """
     运行单个main.py进程
     """
@@ -47,12 +54,13 @@ def run_main_process(task_config, log_dir="logs"):
     server_ip = task_config["server_ip"]
     server_port = task_config["server_port"]
     
+    encoding = 'utf-8'  # 固定UTF-8
     # 创建日志目录
     os.makedirs(log_dir, exist_ok=True)
-    
     # 生成日志文件名（带时间戳）
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_file = os.path.join(log_dir, f"{task_name}_{timestamp}.log")
+
     
     # 构建命令行参数
     cmd = [
@@ -62,38 +70,46 @@ def run_main_process(task_config, log_dir="logs"):
         "--server-ip", str(server_ip) ,
         "--server-port",str(server_port) ,
     ]
-    
     print(f"[{datetime.now()}] 启动任务: {task_name}")
+    print(f"  统一编码: {encoding}")
     print(f"  Excel文件: {excel_file}")
     print(f"  参数: {phone} - {server_ip} - {server_port}")
     print(f"  日志: {log_file}")
+    print(f"  命令: {' '.join(cmd)}")
     
     # 执行命令，重定向输出到日志文件
-    with open(log_file, 'w', encoding=system_encoding) as f:
+    with open(log_file, 'w', encoding=encoding) as f:
         f.write(f"任务开始: {datetime.now()}\n")
         f.write(f"任务名称: {task_name}\n")
         f.write(f"Excel文件: {excel_file}\n")
         f.write(f"参数: {phone} - {server_ip} - {server_port}\n")
         f.write("-" * 50 + "\n")
+        f.flush()  # 立即写入
         
         # 执行main.py
         process = subprocess.Popen(
-            cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            encoding=system_encoding
-        )
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                encoding=encoding,  # 关键：使用UTF-8，不是system_encoding
+                bufsize=1,
+                cwd=os.path.dirname(__file__),
+                # 传递环境变量，确保子进程也使用UTF-8
+                env={**os.environ, 'PYTHONIOENCODING': 'utf-8'}
+            )
         
         # 实时输出并记录日志
         for line in process.stdout:
-            print(f"[{task_name}] {line}", end='')
-            f.write(line)
+                line = line.rstrip('\n')  # 移除换行符
+                print(f"[{task_name}] {line}")
+                f.write(line + '\n')
+                f.flush()
     
     # 等待进程结束
     return_code = process.wait()
     
-    with open(log_file, 'a', encoding=system_encoding) as f:
+    with open(log_file, 'a', encoding=encoding) as f:
         f.write(f"\n任务结束: {datetime.now()}\n")
         f.write(f"退出代码: {return_code}\n")
     
