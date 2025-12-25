@@ -58,11 +58,11 @@ def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608)
 
 def main():
     # 服务器配置(独立测试使用)==============================================
-    _excleFile = "excle/轨迹列表.xlsx"    
-    _terminal_phone = "13301110130"         # 车牌号 "13305131386"  14926873647    
-    SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
-    SERVER_PORT = 6608                      # 25209                          6608
-    SEND_TO_SERVER = False                   # 是否发送到服务器
+    # _excleFile = "excle/轨迹列表.xlsx"    
+    # _terminal_phone = "13301110130"         # 车牌号 "13305131386"  14926873647    
+    # SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
+    # SERVER_PORT = 6608                      # 25209                          6608
+    # SEND_TO_SERVER = False                   # 是否发送到服务器
 
     process_count = 3                       # 处理前2行数据
     _altitude_A = 10                        # 海拔
@@ -71,26 +71,32 @@ def main():
     _satellite_count_B = 10
 
     # 使用外部参数传入使用 ==================================================
-    # 范例：python main.py --excel "excle/轨迹列表.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 
+    # 范例：python main.py --excel "excle/轨迹列表.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
     parser = argparse.ArgumentParser(description='JT808数据发送')
     parser.add_argument('--excel', required=True, help='Excel文件路径')
     parser.add_argument('--phone', required=True, help='终端号码')
     parser.add_argument('--server-ip', required=True, help='服务器IP')
     parser.add_argument('--server-port', type=int, required=True, help='服务器端口')
-    # parser.add_argument('--prefix', default='', help='终端前缀')
-    # parser.add_argument('--log-level', default='INFO', help='日志级别')
+    parser.add_argument('--send', dest='is_SEND', action='store_true', 
+                        help='真实发送数据到服务器（默认不发送）')
+    parser.add_argument('--no-send', dest='is_SEND', action='store_false',
+                        help='测试模式，不实际发送')
+    parser.set_defaults(is_SEND=False)  # 默认值
 
     args = parser.parse_args()
 
     _excleFile = args.excel    
     _terminal_phone = args.phone           
     SERVER_IP = args.server_ip               
-    SERVER_PORT = args.server_port    
+    SERVER_PORT = args.server_port   
+    SEND_TO_SERVER =  args.is_SEND   
 
-    print(f"开始处理 Excel: {_excleFile}")
+    print(f"")
+    print(f"开始处理: {_excleFile}")
     print(f"终端号码: {_terminal_phone}")
-    print(f"连接服务器: {SERVER_IP}:{SERVER_PORT}")
-
+    print(f"连服务器: {SERVER_IP}:{SERVER_PORT}")
+    print(f"真实发送: {SEND_TO_SERVER}")
+    print(f"\n{'='*50}")
     
     if SEND_TO_SERVER:
         print(f"目标服务器: {SERVER_IP}:{SERVER_PORT}")
