@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 import multiprocessing
 import os
+import locale
 
 # 任务配置：每个任务对应一个main.py实例
 
@@ -14,35 +15,37 @@ TASKS = [
     {
         "name": "任务1-车队A",
         "excel_file": r"excle\轨迹列表_A.xlsx",  # 完整路径
-        "params": {
-            "server_ip": SERVER_IP,
-            "server_port": SERVER_PORT,
-            "terminal_phone": "13301110130"
-        },
+        "server_ip": SERVER_IP,
+        "server_port": SERVER_PORT,
+        "terminal_phone": "13301110130",
         "start_time": "09:00:00",  # 每天开始时间
         "description": "处理车队A的数据"
     },
     {
         "name": "任务2-车队B", 
         "excel_file": r"excle\轨迹列表_B.xlsx",
-        "params": {
-            "server_ip": SERVER_IP,
-            "server_port": SERVER_PORT, 
-            "terminal_phone": "13301110130"
-        },
+        "server_ip": SERVER_IP,
+        "server_port": SERVER_PORT, 
+        "terminal_phone": "13301110130",
         "start_time": "09:30:00",
         "description": "处理车队B的数据"
-    },
+    }
     # 添加更多任务...
 ]
 
 def run_main_process(task_config, log_dir="logs"):
+    
+    # 获取系统默认编码
+    system_encoding = locale.getpreferredencoding()
+    print(f"系统编码: {system_encoding}")  # 通常是 'cp936' 或 'gbk'
     """
     运行单个main.py进程
     """
     task_name = task_config["name"]
     excel_file = task_config["excel_file"]
-    params = task_config["params"]
+    phone = task_config["terminal_phone"]
+    server_ip = task_config["server_ip"]
+    server_port = task_config["server_port"]
     
     # 创建日志目录
     os.makedirs(log_dir, exist_ok=True)
@@ -55,22 +58,22 @@ def run_main_process(task_config, log_dir="logs"):
     cmd = [
         "python", "main.py",
         "--excel", excel_file,
-        "--server-ip", params["server_ip"],
-        "--server-port", params["server_port"],
-        "--prefix", params["terminal_phone"]
+        "--phone", str(phone),
+        "--server-ip", str(server_ip) ,
+        "--server-port",str(server_port) ,
     ]
     
     print(f"[{datetime.now()}] 启动任务: {task_name}")
     print(f"  Excel文件: {excel_file}")
-    print(f"  参数: {params}")
+    print(f"  参数: {phone} - {server_ip} - {server_port}")
     print(f"  日志: {log_file}")
     
     # 执行命令，重定向输出到日志文件
-    with open(log_file, 'w', encoding='utf-8') as f:
+    with open(log_file, 'w', encoding=system_encoding) as f:
         f.write(f"任务开始: {datetime.now()}\n")
         f.write(f"任务名称: {task_name}\n")
         f.write(f"Excel文件: {excel_file}\n")
-        f.write(f"参数: {params}\n")
+        f.write(f"参数: {phone} - {server_ip} - {server_port}\n")
         f.write("-" * 50 + "\n")
         
         # 执行main.py
@@ -79,7 +82,7 @@ def run_main_process(task_config, log_dir="logs"):
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
-            encoding='utf-8'
+            encoding=system_encoding
         )
         
         # 实时输出并记录日志
@@ -90,7 +93,7 @@ def run_main_process(task_config, log_dir="logs"):
     # 等待进程结束
     return_code = process.wait()
     
-    with open(log_file, 'a', encoding='utf-8') as f:
+    with open(log_file, 'a', encoding=system_encoding) as f:
         f.write(f"\n任务结束: {datetime.now()}\n")
         f.write(f"退出代码: {return_code}\n")
     
@@ -157,8 +160,8 @@ def main():
     try:
         for task in TASKS:
             # 等待到指定时间
-            if task.get("start_time"):
-                wait_until(task["start_time"])
+            # if task.get("start_time"):
+            #     wait_until(task["start_time"])
             
             # 使用多进程并行执行
             process = multiprocessing.Process(
