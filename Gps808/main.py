@@ -6,6 +6,19 @@ import temp
 import testdate
 import random
 import argparse
+import os
+
+# 仅此一行，全平台有效，0延迟
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
+# 可选：Windows控制台优化（try保护，Linux自动跳过）
+try:
+    import ctypes
+    ctypes.windll.kernel32.SetConsoleOutputCP(65001)
+except:
+    pass  # Linux上自动忽略，无需平台检查
+
+
 
 def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608):
     """
@@ -57,7 +70,7 @@ def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608)
                 pass
 
 def main():
-    # 服务器配置(独立测试使用)==============================================
+    #A方式测试： 服务器配置(独立测试使用)==============================================
     # _excleFile = "excle/轨迹列表.xlsx"    
     # _terminal_phone = "13301110130"         # 车牌号 "13305131386"  14926873647    
     # SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
@@ -70,7 +83,7 @@ def main():
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
 
-    # 使用外部参数传入使用 ==================================================
+    #B方式测试： 使用外部参数传入使用 ==================================================
     # 范例：python main.py --excel "excle/轨迹列表.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
     parser = argparse.ArgumentParser(description='JT808数据发送')
     parser.add_argument('--excel', required=True, help='Excel文件路径')
@@ -80,7 +93,6 @@ def main():
     parser.add_argument('--send', dest='is_SEND', action='store_true',help='真实发送数据')
     parser.add_argument('--no-send', dest='is_SEND', action='store_false',help='测试模式不实际发送')
     parser.set_defaults(is_SEND=False)  # 默认值
-
     args = parser.parse_args()
     _excleFile = args.excel    
     _terminal_phone = args.phone           
@@ -88,6 +100,7 @@ def main():
     SERVER_PORT = args.server_port   
     SEND_TO_SERVER =  args.is_SEND   
 
+    # A和B只能选一种 ====================================================================
     print(f"")
     print(f"开始处理: {_excleFile}")
     print(f"终端号码: {_terminal_phone}")
@@ -152,7 +165,6 @@ def main():
 
             print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
             print(f"    手机: {terminal_phone}")
-            print(f"    车牌: {terminal_phone}")
             print(f"    纬度: {latitude} 偏移后{new_lat}")
             print(f"    经度: {longitude} 偏移后{new_lon}")
             print(f"    速度: {speed} km/h 偏移后{speed}"  )
