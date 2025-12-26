@@ -25,6 +25,7 @@ def excel_to_config(excel_path, output_dir="config"):
         print(f"读取Excel失败: {e}")
         return None
     
+    print(f"")
     print(f"成功读取Excel，共 {len(df)} 行配置")
     
     # 转换为任务列表
@@ -34,7 +35,7 @@ def excel_to_config(excel_path, output_dir="config"):
         enabled = str(row.get('enabled', '是')).strip() in ['是', 'yes', 'true', '1', '启用']
         
         if not enabled:
-            print(f"跳过禁用任务: {row.get('name', f'行{index+1}')}")
+            print(f"  -{index+1}.　　禁用: {row.get('name', f'行{index+1}')}")
             continue
         
         task = {
@@ -44,17 +45,10 @@ def excel_to_config(excel_path, output_dir="config"):
             "server_port": int(row.get('server_port', 8080)),
             "terminal_phone": str(row.get('terminal_phone', '')).strip(),
             "start_time": str(row.get('start_time', '09:00:00')).strip(),
-            "description": str(row.get('description', '')).strip(),
-            "params": {
-                "send": str(row.get('send', '否')).strip() in ['是', 'yes', 'true', '1'],
-                "start_row": int(row.get('start_row', 2)),
-                "log_level": str(row.get('log_level', 'INFO')).strip(),
-                "batch_size": int(row.get('batch_size', 100)),
-            }
+            "description": str(row.get('description', '')).strip()
         }
-        
         tasks.append(task)
-        print(f"添加任务: {task['name']}")
+        print(f"  -{index+1}.添加配置: {task['name']}")
     
     # 创建输出目录
     os.makedirs(output_dir, exist_ok=True)
@@ -64,12 +58,7 @@ def excel_to_config(excel_path, output_dir="config"):
         "version": "1.0",
         "generated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "source_excel": os.path.basename(excel_path),
-        "tasks": tasks,
-        "global": {
-            "max_concurrent_tasks": 3,
-            "log_retention_days": 7,
-            "timezone": "Asia/Shanghai"
-        }
+        "tasks": tasks
     }
     
     # 保存JSON文件
@@ -77,9 +66,7 @@ def excel_to_config(excel_path, output_dir="config"):
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
     
-    print(f"\n配置已生成: {output_file}")
-    print(f"共 {len(tasks)} 个任务")
-    
+    print(f"\n配置已生成: {output_file} 共 {len(tasks)} 个任务")
     return config
 
 def load_config(config_path="config/tasks.json"):
@@ -112,8 +99,8 @@ if __name__ == "__main__":
         config = excel_to_config(excel_path)
         if config:
             print("\n配置预览:")
-            for task in config["tasks"][:3]:  # 显示前3个
+            for task in config["tasks"]:  # 显示前3个
                 print(f"  - {task['name']}: {task['description']}")
     else:
         print(f"Excel文件不存在: {excel_path}")
-        print("请创建: excle/任务配置.xlsx")
+        print("请创建: config.xlsx")
