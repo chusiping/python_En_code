@@ -3,7 +3,7 @@ import time
 from datetime import datetime
 import multiprocessing
 import os
-import locale
+import argparse
 
 # 仅此一行，全平台有效，0延迟
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -20,7 +20,15 @@ except:
 
 SERVER_IP = '14.23.86.188'              # 市平台 120.197.38.48  测试平台 14.23.86.188 
 SERVER_PORT = 6608                      # 25209   
-SEND_TO_SERVER = False                  # 是否真发送
+# SEND_TO_SERVER = False                
+
+parser = argparse.ArgumentParser(description='')
+parser.add_argument('--send', dest='is_SEND', action='store_true',help='真实发送数据')
+parser.add_argument('--no-send', dest='is_SEND', action='store_false',help='测试模式不实际发送')
+parser.set_defaults(SEND_TO_SERVER=False)  # 默认值
+args = parser.parse_args()
+SEND_TO_SERVER =  args.is_SEND          # 是否真发送
+
 
 TASKS = [
     {
@@ -70,6 +78,12 @@ def run_main_process(task_config, log_dir="logs"):
         "--server-ip", str(server_ip) ,
         "--server-port",str(server_port) ,
     ]
+    if SEND_TO_SERVER:
+        cmd.append("--send")  # 添加 --send 参数
+    
+    print(cmd) 
+    return
+
     print(f"[{datetime.now()}] 启动任务: {task_name}")
     print(f"  统一编码: {encoding}")
     print(f"  Excel文件: {excel_file}")
@@ -188,10 +202,11 @@ def main():
             
             process.start()
             processes.append(process)
+            print(f"")
             print(f"已启动进程: {task['name']} (PID: {process.pid})")
             
             # 可以添加启动间隔
-            time.sleep(2)  # 间隔2秒启动下一个
+            time.sleep(0.1)  # 间隔0.1秒启动下一个
         
         # 等待所有进程完成
         print("\n等待所有任务完成...")
