@@ -21,18 +21,37 @@ def read_and_process_excel(file_path):
         rows = df.values.tolist()      # 数据行
         result = rows
 
-        return df,result
+        miao = max_time_diff_in_first_n(df)
+
+        return miao,result
 
     except Exception as e:
         print(f"读取文件失败: {e}")
         return None
 
+def max_time_diff_in_first_n(df, n=10):
+    """
+    计算时间列前 n 条记录中，相邻时间差（秒）的最大值
+    """
+    # 1. 按时间排序
+    df = df.sort_values('时间').reset_index(drop=True)
+
+    # 2. 取前 n 条时间
+    times = df['时间'].iloc[:n]
+
+    # 3. 计算相邻时间差（秒）
+    diffs = times.diff().dt.total_seconds()
+
+    # 4. 去掉 NaN，取最大值
+    return diffs.dropna().max()
 
 # 主程序
 if __name__ == "__main__":
     # 读取数据
     file_path = '车充轨迹.xlsx'
-    df,data = read_and_process_excel(file_path)
+    miao,data = read_and_process_excel(file_path)
+
+    print(f"差秒：{miao}")
 
     if data:
         # print(f"\n前3行数据:")
