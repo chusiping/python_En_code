@@ -8,6 +8,7 @@ import testdate
 import random
 import argparse
 import os
+import re
 
 # 仅此一行，全平台有效，0延迟
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -19,7 +20,16 @@ try:
 except:
     pass  # Linux上自动忽略，无需平台检查
 
-
+def extract_number_from_brackets(text):
+    """
+    从字符串中提取括号内的数字
+    例如："东(103)" -> 103
+    """
+    # 使用正则表达式提取
+    match = re.search(r'\((\d+)\)', text)
+    if match:
+        return int(match.group(1))
+    return None
 
 def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608):
     """
@@ -78,11 +88,12 @@ def main():
     # SERVER_PORT = 6608                      # 25209                          6608
     # SEND_TO_SERVER = False                   # 是否发送到服务器
 
-    process_count = 3                       # 处理前2行数据
+    process_count = 11                       # 处理前2行数据
     _altitude_A = 10                        # 海拔
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
+    _miao = 1
 
     #B方式测试： 使用外部参数传入使用 ==================================================
     # 范例：python main.py --excel "车充轨迹.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
@@ -118,7 +129,8 @@ def main():
     # 1. 读取Excel数据
     print("\n[1] 读取Excel数据...")
     miao,excel_data = readdate_v2.read_and_process_excel(_excleFile)
-    
+    # _miao = miao
+
     if not excel_data:
         print("读取数据失败，程序退出")
         return
@@ -147,7 +159,7 @@ def main():
             longitude = float(excel_data[i][7])      # 经度
             _speed = int(excel_data[i][3])           # 速度 km/h
             speed = testdate.random_adjust(_speed,3)
-            direction = int(excel_data[i][4])       # 方向
+            direction = extract_number_from_brackets(excel_data[i][4])       # 方向
             altitude = random.randint(_altitude_A, _altitude_B)                    # 随机取海拔
             mileage = 0
             msg_sn = 0
@@ -160,7 +172,7 @@ def main():
             if '里程：' in excel_data[i][5]:
                 mileage_part = excel_data[i][5].split(';')[0].split('：')[1].split('km')[0]
                 mileage = int(float(mileage_part)*10)
-            if '刹车' in excel_data[i][5]:
+            if '制动信号' in excel_data[i][5]:
                 brake_on = True
 
             print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
@@ -172,9 +184,9 @@ def main():
             print(f"    卫星: {satellite_count} ")
             print(f"    方向: {direction}°")
             print(f"    时间: {testdate.replace_date_to_today()}")
-            print(f"    刹车: {brake_on}")
+            print(f"    制动: {brake_on}")
 
-            return
+            
 
             packet,raw = temp.build_0200(
                 terminal_phone,
@@ -223,8 +235,8 @@ def main():
             
             # 添加延时，避免发送过快
             if i < min(process_count, total_rows) - 1:  # 不是最后一条
-                print(f"\n等待2秒...")
-                time.sleep(3)
+                print(f"\n等待{_miao}秒...")
+                time.sleep(_miao)
                 
         except ValueError as e:
             print(f"✗ 数据转换错误: {e}")
