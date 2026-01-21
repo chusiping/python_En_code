@@ -38,14 +38,37 @@ def excel_to_config(excel_path, output_dir="config"):
             print(f"  -{index+1}.　　禁用: {row.get('name', f'行{index+1}')}")
             continue
         
+        # 处理日期和时间
+        start_date_str = str(row.get('start_date', '')).strip()
+        start_time_str = str(row.get('start_time', '')).strip()
+        # 合并日期和时间
+        schedule_time = None
+        schedule_note = None
+
+        if start_date_str and start_time_str:
+            try:
+                # 合并日期和时间
+                datetime_str = f"{start_date_str} {start_time_str}"
+                parsed_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
+                # 使用易读的格式，而不是ISO格式
+                schedule_time = parsed_time.strftime("%Y-%m-%d %H:%M:%S")  # 改为这个
+                schedule_note = f"定时执行于 {schedule_time}"
+            except ValueError as e:
+                print(f"⚠  第{index+2}行日期时间格式错误: {start_date_str} {start_time_str}")
+                schedule_time = None
+                schedule_note = "时间不完整"
+
         task = {
             "name": str(row.get('name', f'任务{index+1}')).strip(),
             "excel_file": str(row.get('excel_file', '')).strip(),
             "server_ip": str(row.get('server_ip', '127.0.0.1')).strip(),
             "server_port": int(row.get('server_port', 8080)),
             "terminal_phone": str(row.get('terminal_phone', '')).strip(),
-            "start_time": str(row.get('start_time', '09:00:00')).strip(),
-            "description": str(row.get('description', '')).strip()
+            # 重要修改：schedule_time 现在是字符串，可能是ISO时间或HH:MM:SS
+            # "start_time": str(row.get('start_time', '09:00:00')).strip(),            
+            "schedule_time": schedule_time,  # ISO格式的绝对时间或None
+            "description": str(row.get('description', '')).strip(),
+            "schedule_note": schedule_note
         }
         tasks.append(task)
         print(f"  -{index+1}.添加配置: {task['name']}")
