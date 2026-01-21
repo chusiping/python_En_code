@@ -6,6 +6,8 @@ import os
 import argparse
 import excel_to_config
 import json
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 # 仅此一行，全平台有效，0延迟
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -30,6 +32,11 @@ parser.add_argument('--no-send', dest='is_SEND', action='store_false',help='测�
 parser.set_defaults(SEND_TO_SERVER=False)  # 默认值
 args = parser.parse_args()
 SEND_TO_SERVER =  args.is_SEND          # 是否真发送
+
+# 全局变量
+active_tasks = []  # 存储当前正在运行的任务
+running_processes = []  # 存储正在运行的进程
+task_lock = threading.Lock()  # 线程锁
 
 # 调试时才使用写死的Tasks
 # TASKS = [
@@ -156,106 +163,105 @@ def run_main_process(task_config, log_dir="logs"):
     print(f"[{datetime.now()}] 任务完成: {task_name}, 退出代码: {return_code}")
     return return_code
 
-def wait_until(target_time, check_interval=1):
+def start_task_if_time(task):
     """
-    等待到指定时间，显示动态倒计时
-    """   
+    检查并启动任务（如果时间到了）
+    """
+    if not task.get("schedule_time"):
+        return False
+    
     now = datetime.now()
-    target = datetime.strptime(target_time, "%H:%M:%S")
-    target = now.replace(hour=target.hour, minute=target.minute, second=target.second)
+    target_time_str = task["schedule_time"]
     
-    if target < now:
-        target = target.replace(day=target.day + 1)
+    # 将配置时间转换为今天的datetime对象
+    target_time = datetime.strptime(target_time_str, "%H:%M:%S")
+    target_datetime = now.replace(hour=target_time.hour,  minute=target_time.minute,second=target_time.second, microsecond=0)
     
-    wait_seconds = (target - now).total_seconds()
-    
-    # 如果等待时间很长（超过10秒），显示动态倒计时
-    if wait_seconds > 10:
-        print(f"\n等待到 {target_time}...")
-        print("-" * 40)
-        
-        last_update = 0
-        while wait_seconds > 0:
-            current_time = time.time()
-            
-            # 每1秒更新一次显示（不要更新太频繁）
-            if current_time - last_update >= 1:
-                # 计算剩余时间
-                hours = int(wait_seconds // 3600)
-                minutes = int((wait_seconds % 3600) // 60)
-                seconds = int(wait_seconds % 60)
-                
-                # 清除当前行，重新输出
-                print(f"\r剩余时间: {hours:02d}:{minutes:02d}:{seconds:02d} | "
-                      f"预计开始: {target.strftime('%Y-%m-%d %H:%M:%S')}", 
-                      end="", flush=True)
-                
-                last_update = current_time
-            
-            # 小睡一下，减少CPU占用
-            time.sleep(0.1)
-            wait_seconds -= 0.1
-        
-        print()  # 换行
-    else:
-        # 短时间等待直接sleep
-        time.sleep(wait_seconds)
-    
-def main():
+    # 如果配置时间已经过去（在今天），检查是否已经执行过
+    if target_datetime <= now:
+        # 检查任务是否已经在运行列表中
+        with task_lock:
+            if task not in active_tasks:
+                # 添加到运行中任务列表
+                active_tasks.append(task)
+                return True
+    return False
 
-    # 使用配置文件和"调试时才使用写死的Tasks"二选一
+def schedule_tasks(tasks):
+    """
+    调度任务：每隔5秒检查时间并启动符合条件的任务
+    """
+    print(f"[{datetime.now()}] 开始任务调度，共 {len(tasks)} 个任务")
+    
+    # 创建线程池用于并发执行任务
+    with ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
+        futures = []
+        
+        try:
+            while True:
+                # 检查所有任务
+                for task in tasks:
+                    # 如果任务已经在运行中，跳过
+                    with task_lock:
+                        if task in active_tasks:
+                            continue
+                    
+                    # 检查是否到达执行时间
+                    if start_task_if_time(task):
+                        print(f"[{datetime.now()}] 启动任务: {task['name']}")
+                        
+                        # 使用线程池提交任务
+                        future = executor.submit(run_main_process, task)
+                        futures.append((task['name'], future))
+                
+                # 显示当前状态
+                with task_lock:
+                    running_count = len(active_tasks)
+                    pending_count = len(tasks) - running_count
+                    print(f"[{datetime.now()}] 状态: 运行中 {running_count} | 等待中 {pending_count}")
+                
+                # 每隔5秒检查一次
+                time.sleep(5)
+                
+        except KeyboardInterrupt:
+            print(f"\n[{datetime.now()}] 接收到中断信号，停止调度...")
+            
+            # 等待所有任务完成
+            print(f"[{datetime.now()}] 等待 {len(futures)} 个任务完成...")
+            for task_name, future in futures:
+                try:
+                    future.result(timeout=10)  # 等待10秒
+                    print(f"[{datetime.now()}] 任务 {task_name} 已完成")
+                except Exception as e:
+                    print(f"[{datetime.now()}] 任务 {task_name} 出错: {e}")
+
+def main():
+    """
+    主函数
+    """
+    # 加载任务配置
     TASKS = load_tasks_from_json("config/tasks.json")
     if not TASKS:
         print("没有可执行的任务，程序退出")
         return
-
-    """
-    主调度函数
-    """
-    print("=" * 60)
-    print("JT808 多任务调度器启动")
-    print(f"系统时间: {datetime.now()}")
-    print(f"CPU核心数: {multiprocessing.cpu_count()}")
-    print("=" * 60)
     
-    processes = []
+    # print("=" * 60 + "\nJT808 任务调度器启动\n" + 
+    #       f"系统时间: {datetime.now()}\n" + 
+    #       f"CPU核心数: {multiprocessing.cpu_count()}\n" + 
+    #       f"总任务数: {len(TASKS)}\n" + 
+    #       "=" * 60)
     
-    try:
-        for task in TASKS:
-            # 等待到指定时间
-            # if task.get("start_time"):
-            #     wait_until(task["start_time"])
-            
-            # 使用多进程并行执行
-            process = multiprocessing.Process(
-                target=run_main_process,
-                args=(task,),
-                name=task["name"]
-            )
-            
-            process.start()
-            processes.append(process)
-            print(f"")
-            print(f"已启动进程: {task['name']} (PID: {process.pid})")
-            
-            # 可以添加启动间隔
-            time.sleep(0.1)  # 间隔0.1秒启动下一个
-        
-        # 等待所有进程完成
-        print("\n等待所有任务完成...")
-        for process in processes:
-            process.join()
-            print(f"进程 {process.name} 已完成")
+    # 显示所有任务及其计划时间
+    print("\n任务列表:")
+    for i, task in enumerate(TASKS, 1):
+        schedule_time = task.get("schedule_time", "立即执行")
+        print(f"  {i}. {task['name']} - 计划时间: {schedule_time}")
     
-    except KeyboardInterrupt:
-        print("\n接收到中断信号，正在停止所有进程...")
-        for process in processes:
-            if process.is_alive():
-                process.terminate()
-                process.join()
-                print(f"已终止进程: {process.name}")
+    print("\n调度器开始运行，每隔5秒检查一次任务时间...")
+    print("按 Ctrl+C 停止程序\n")
     
-    print("\n所有任务执行完毕！")
+    # 开始调度任务
+    schedule_tasks(TASKS)
 
 if __name__ == "__main__":
     main()

@@ -1,9 +1,11 @@
 ﻿1. excel_to_config.py
     excel_to_config.py 读取排班表 config.xlsx 生成 task.json 
-2. task.py
+2. task.py      排班改成绝对日期，不进行循环
     task.py 读取 config/tasks.json ，等待配置的时间到了，进行多任务发送
     python task.py --send
 
-    排班改成绝对日期，不进行循环
+    逻辑：读取配置到数组，每隔5秒对比数组里的时间。
+          系统时间晚于配置里指定的时间，任务加入线程数组。
+    
 
 3. 
