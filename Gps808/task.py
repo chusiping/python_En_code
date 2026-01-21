@@ -4,6 +4,8 @@ from datetime import datetime
 import multiprocessing
 import os
 import argparse
+import excel_to_config
+import json
 
 # 仅此一行，全平台有效，0延迟
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -29,28 +31,52 @@ parser.set_defaults(SEND_TO_SERVER=False)  # 默认值
 args = parser.parse_args()
 SEND_TO_SERVER =  args.is_SEND          # 是否真发送
 
+# 调试时才使用写死的Tasks
+# TASKS = [
+#     {
+#         "name": "任务1-车队A",
+#         "excel_file": r"excle\轨迹列表_A.xlsx",  # 完整路径
+#         "server_ip": SERVER_IP,
+#         "server_port": SERVER_PORT,
+#         "terminal_phone": "13301110130",
+#         "start_time": "15:50:50",  # 每天开始时间
+#         "description": "处理车队A的数据"
+#     },
+#     {
+#         "name": "任务2-车队B", 
+#         "excel_file": r"excle\轨迹列表_B.xlsx",
+#         "server_ip": SERVER_IP,
+#         "server_port": SERVER_PORT, 
+#         "terminal_phone": "13301110130",
+#         "start_time": "09:30:00",
+#         "description": "处理车队B的数据"
+#     }
+#     # 添加更多任务...
+# ]
 
-TASKS = [
-    {
-        "name": "任务1-车队A",
-        "excel_file": r"excle\轨迹列表_A.xlsx",  # 完整路径
-        "server_ip": SERVER_IP,
-        "server_port": SERVER_PORT,
-        "terminal_phone": "13301110130",
-        "start_time": "09:00:00",  # 每天开始时间
-        "description": "处理车队A的数据"
-    },
-    {
-        "name": "任务2-车队B", 
-        "excel_file": r"excle\轨迹列表_B.xlsx",
-        "server_ip": SERVER_IP,
-        "server_port": SERVER_PORT, 
-        "terminal_phone": "13301110130",
-        "start_time": "09:30:00",
-        "description": "处理车队B的数据"
-    }
-    # 添加更多任务...
-]
+def load_tasks_from_json(json_file="config/tasks.json"):
+    """
+    直接从JSON文件加载任务配置
+    """
+    try:
+        with open(json_file, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+        tasks = config.get("tasks", [])
+        print(f"从 {json_file} 加载了 {len(tasks)} 个任务")
+        return tasks
+        
+    except FileNotFoundError:
+        print(f"配置文件不存在: {json_file}")
+        print(f"请手动创建 {json_file} 文件")
+        return []
+    except json.JSONDecodeError as e:
+        print(f"JSON格式错误: {e}")
+        print(f"请检查 {json_file} 文件的JSON语法")
+        return []
+    except Exception as e:
+        print(f"加载配置失败: {e}")
+        return []
+
 
 def run_main_process(task_config, log_dir="logs"):
     """
@@ -81,8 +107,8 @@ def run_main_process(task_config, log_dir="logs"):
     if SEND_TO_SERVER:
         cmd.append("--send")  # 添加 --send 参数
     
-    print(cmd) 
-    return
+    # print(cmd) 
+    # return
 
     print(f"[{datetime.now()}] 启动任务: {task_name}")
     print(f"  统一编码: {encoding}")
@@ -176,6 +202,13 @@ def wait_until(target_time, check_interval=1):
         time.sleep(wait_seconds)
     
 def main():
+
+    # 使用配置文件和"调试时才使用写死的Tasks"二选一
+    TASKS = load_tasks_from_json("config/tasks.json")
+    if not TASKS:
+        print("没有可执行的任务，程序退出")
+        return
+
     """
     主调度函数
     """

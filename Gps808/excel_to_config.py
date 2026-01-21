@@ -57,6 +57,9 @@ def excel_to_config(excel_path, output_dir="config"):
                 print(f"⚠  第{index+2}行日期时间格式错误: {start_date_str} {start_time_str}")
                 schedule_time = None
                 schedule_note = "时间不完整"
+        else:
+            print(f"⚠  日期时间缺失: {start_date_str} {start_time_str}")
+            schedule_note = "时间不完整"
 
         task = {
             "name": str(row.get('name', f'任务{index+1}')).strip(),
