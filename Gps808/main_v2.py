@@ -86,7 +86,7 @@ def main():
     # SERVER_PORT = 6608                      # 25209                          6608
     # SEND_TO_SERVER = False                   # 是否发送到服务器
 
-    process_count = 11                       # 处理前2行数据
+    process_count = 2                       # 处理前2行数据
     _altitude_A = 10                        # 海拔
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
@@ -118,7 +118,7 @@ def main():
     if SEND_TO_SERVER:
         print(f"\n√[1] 正式发送: {SERVER_IP}:{SERVER_PORT} 间隔{_miao}秒")
     else:
-        print(f"\n[1] 演示模式: 仅生成数据包，不真实发送。间隔{_miao}秒 总 {total_rows} 行数据")
+        print(f"\n[1] 演示模式: 仅生成数据包，不真实发送。间隔{_miao}秒, 总{total_rows}行数据")
     print(f"    发送任务: {_excleFile} - 终端:{_terminal_phone} - 服务器:{SERVER_IP}:{SERVER_PORT}")
     print(f"")
     
@@ -247,9 +247,9 @@ def main():
     
     # 3. 询问是否处理剩余数据
     remaining = max(0, total_rows - process_count)
-    if remaining > 0:
+    # if remaining > 0:
         # print(f"\n{'='*60}")
-        print(f"\n[3]  还有 {remaining} 条记录未处理")
+        # print(f"\n[3]  还有 {remaining} 条记录未处理")
         
         # if SEND_TO_SERVER:
         #     choice = input(f"是否批量处理剩余数据？(y/n): ").lower()
@@ -301,7 +301,7 @@ def main():
         #                 time.sleep(2)
     
 
-    print(f"[4]  统计结果 => 总记录数: {total_rows - 1}  成功处理: {success_count}  失败处理: {fail_count}")
+    print(f"[4]\n 统计结果 => 总记录数:{total_rows},还有{remaining}条记录未处理,成功处理: {success_count}  失败处理: {fail_count}")
     # 4. 显示统计结果
     # print(f"\n{'='*60}")
     # print("处理完成!")
