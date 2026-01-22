@@ -1,6 +1,4 @@
-import readdate
 import readdate_v2
-import zhuanhuan
 import socket
 import time
 import temp
@@ -93,10 +91,10 @@ def main():
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
-    _miao = 1
+    _miao = 2
 
     #B方式测试： 使用外部参数传入使用 ==================================================
-    # 范例：python main.py --excel "车充轨迹.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
+    # 范例：python main_v2.py --excel "车充轨迹.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
     parser = argparse.ArgumentParser(description='JT808数据发送')
     parser.add_argument('--excel', required=True, help='Excel文件路径')
     parser.add_argument('--phone', required=True, help='终端号码')
@@ -113,30 +111,28 @@ def main():
     SEND_TO_SERVER =  args.is_SEND   
 
     # A和B只能选一种 ====================================================================
-    print(f"")
-    print(f"开始处理: {_excleFile}")
-    print(f"终端号码: {_terminal_phone}")
-    print(f"连服务器: {SERVER_IP}:{SERVER_PORT}")
-    print(f"真实发送: {SEND_TO_SERVER}")
-    print(f"\n{'='*50}")
+    miao,excel_data = readdate_v2.read_and_process_excel(_excleFile)
+    total_rows = len(excel_data)
     
+    print(f"{'='*50}")
     if SEND_TO_SERVER:
-        print(f"目标服务器: {SERVER_IP}:{SERVER_PORT}")
+        print(f"\n√[1] 正式发送: {SERVER_IP}:{SERVER_PORT} 间隔{_miao}秒")
     else:
-        print("演示模式: 仅生成数据包，不发送")
-
+        print(f"\n[1] 演示模式: 仅生成数据包，不真实发送。间隔{_miao}秒 总 {total_rows} 行数据")
+    print(f"    发送任务: {_excleFile} - 终端:{_terminal_phone} - 服务器:{SERVER_IP}:{SERVER_PORT}")
+    print(f"")
     
     # 1. 读取Excel数据
-    print("\n[1] 读取Excel数据...")
-    miao,excel_data = readdate_v2.read_and_process_excel(_excleFile)
+    # print("\n[1] 读取Excel数据...")
+    # miao,excel_data = readdate_v2.read_and_process_excel(_excleFile)
     # _miao = miao
 
     if not excel_data:
         print("读取数据失败，程序退出")
         return
     
-    total_rows = len(excel_data)
-    print(f"   ✓ 读取成功: {total_rows} 行数据")
+    # total_rows = len(excel_data)
+    # print(f"   ✓ 读取成功: {total_rows} 行数据")
     
     # if total_rows > 0:
     #     print(f"表头: {excel_data[0]}")
@@ -146,11 +142,11 @@ def main():
     fail_count = 0
     
 
-    print(f"\n[2] 处理前{process_count}条记录:")
+    print(f"[2] 处理前{process_count}条记录:")
     
     for i in range(0, min(process_count, total_rows)):  # 从第1行开始，跳过表头(改了)
-        print(f"\n{'='*50}")
-        print(f"\n  处理第 {i} 条记录:")
+        # print(f"\n{'='*50}")
+        # print(f"\n  处理第 {i} 条记录:")
         
         try:
             # 提取数据
@@ -175,18 +171,19 @@ def main():
             if '制动信号' in excel_data[i][5]:
                 brake_on = True
 
-            print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
-            print(f"    手机: {terminal_phone}")
-            print(f"    纬度: {latitude} 偏移后{new_lat}")
-            print(f"    经度: {longitude} 偏移后{new_lon}")
-            print(f"    速度: {speed} km/h 偏移后{speed}"  )
-            print(f"    海拔: {altitude} 随机取")
-            print(f"    卫星: {satellite_count} ")
-            print(f"    方向: {direction}°")
-            print(f"    时间: {testdate.replace_date_to_today()}")
-            print(f"    制动: {brake_on}")
+            # print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
+            # print(f"    手机: {terminal_phone}")
+            # print(f"    纬度: {latitude} 偏移后{new_lat}")
+            # print(f"    经度: {longitude} 偏移后{new_lon}")
+            # print(f"    速度: {speed} km/h 偏移后{speed}"  )
+            # print(f"    海拔: {altitude} 随机取")
+            # print(f"    卫星: {satellite_count} ")
+            # print(f"    方向: {direction}°")
+            # print(f"    时间: {testdate.replace_date_to_today()}")
+            # print(f"    制动: {brake_on}")
 
-            
+            print(f"    处理第 {i} 条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}")
+
 
             packet,raw = temp.build_0200(
                 terminal_phone,
@@ -212,7 +209,7 @@ def main():
                 fail_count += 1
                 continue
             
-            print(f"    ✓ 生成成功 ({len(packet)} 字节)")
+            # print(f"    ✓ 生成成功 ({len(packet)} 字节)")
             
             # 显示数据包信息
             # change808.print_packet_info(packet)
@@ -230,12 +227,12 @@ def main():
                     print(f"    ✗ 第{i}条记录发送失败")
             else:
                 success_count += 1
-                print(f"\nⓘ 演示模式: 跳过发送")
+                # print(f"\nⓘ 演示模式: 跳过发送")
                 # print(f"   数据包HEX: \n   {packet.hex().upper()}")
             
             # 添加延时，避免发送过快
             if i < min(process_count, total_rows) - 1:  # 不是最后一条
-                print(f"\n等待{_miao}秒...")
+                # print(f"\n等待{_miao}秒...")
                 time.sleep(_miao)
                 
         except ValueError as e:
@@ -249,10 +246,10 @@ def main():
             fail_count += 1
     
     # 3. 询问是否处理剩余数据
-    remaining = max(0, total_rows - 4)
+    remaining = max(0, total_rows - process_count)
     if remaining > 0:
-        print(f"\n{'='*60}")
-        print(f"还有 {remaining} 条记录未处理")
+        # print(f"\n{'='*60}")
+        print(f"\n[3]  还有 {remaining} 条记录未处理")
         
         # if SEND_TO_SERVER:
         #     choice = input(f"是否批量处理剩余数据？(y/n): ").lower()
@@ -303,22 +300,23 @@ def main():
         #                 print(f"批次间隔2秒...")
         #                 time.sleep(2)
     
+
+    print(f"[4]  统计结果 => 总记录数: {total_rows - 1}  成功处理: {success_count}  失败处理: {fail_count}")
     # 4. 显示统计结果
-    print(f"\n{'='*60}")
-    print("处理完成!")
-    print(f"{'='*60}")
-    print(f"统计结果:")
-    print(f"  总记录数: {total_rows - 1}")
-    print(f"  成功处理: {success_count}")
-    print(f"  失败处理: {fail_count}")
+    # print(f"\n{'='*60}")
+    # print("处理完成!")
+    # print(f"{'='*60}")
+    # print(f"统计结果:")
+    # print(f"  总记录数: {total_rows - 1}")
+    # print(f"  成功处理: {success_count}")
+    # print(f"  失败处理: {fail_count}")
     
-    if total_rows - 1 > 0:
-        success_rate = success_count / (total_rows - 1) * 100
-        print(f"  成功率: {success_rate:.1f}%")
+    # if total_rows - 1 > 0:
+    #     success_rate = success_count / (total_rows - 1) * 100
+    #     print(f"  成功率: {success_rate:.1f}%")
     
     if SEND_TO_SERVER:
-        print(f"\n服务器: {SERVER_IP}:{SERVER_PORT} (TCP)")
-        print("所有数据包已尝试发送")
+        print(f"\n[4]  服务器: {SERVER_IP}:{SERVER_PORT} (TCP)  所有数据包已尝试发送")
 
 if __name__ == "__main__":
     main()
