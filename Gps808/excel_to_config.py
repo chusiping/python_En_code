@@ -1,10 +1,11 @@
-# excel_to_config.py
+
 import pandas as pd
 import json
 import os
 from datetime import datetime
-import sys
 import re
+import check_config
+import sys
 
 # 仅此一行，全平台有效，0延迟
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -237,63 +238,9 @@ def validate_task_config(row, index):
             if full_datetime < now:
                 errors.append(f"计划时间已经过去: {datetime_str}，当前时间: {now.strftime('%Y-%m-%d %H:%M:%S')}")
             
-            task["schedule_time"] = datetime_str
+            # task["schedule_time"] = datetime_str
         except Exception as e:
             errors.append(f"合并日期时间时出错: {e}")
-
-def validate_all_tasks_from_excel(excel_file_path):
-    """
-    从Excel文件加载并验证所有任务
-    """
-    all_errors = []
-    validated_tasks = []
-    
-    try:
-        # 读取Excel文件
-        df = pd.read_excel(excel_file_path)
-        print(f"✓ 成功加载Excel文件: {excel_file_path}")
-        print(f"  总任务数: {len(df)}")
-        
-        # 检查必要的列
-        required_columns = ['excel_file', 'server_ip', 'server_port', 'terminal_phone', 'start_date', 'start_time']
-        missing_columns = [col for col in required_columns if col not in df.columns]
-        
-        if missing_columns:
-            error_msg = f"Excel文件缺少必要的列: {', '.join(missing_columns)}"
-            print(f"✗ {error_msg}")
-            all_errors.append(error_msg)
-            return False, [], all_errors
-        
-        # 验证每一行
-        for index, row in df.iterrows():
-            print(f"\n验证第 {index+1} 个任务...")
-            
-            success, errors, task = validate_task_config(row, index)
-            
-            if not success:
-                error_msg = f"第 {index+1} 行验证失败: {', '.join(errors)}"
-                print(f"✗ {error_msg}")
-                all_errors.append(error_msg)
-            else:
-                print(f"✓ 第 {index+1} 个任务验证通过: {task.get('name', '未命名')}")
-                validated_tasks.append(task)
-        
-        # 汇总结果
-        if all_errors:
-            print(f"\n✗ 验证失败: {len(all_errors)} 个错误")
-            return False, validated_tasks, all_errors
-        else:
-            print(f"\n✓ 所有任务验证通过，共 {len(validated_tasks)} 个任务")
-            return True, validated_tasks, []
-            
-    except FileNotFoundError:
-        error_msg = f"Excel文件不存在: {excel_file_path}"
-        print(f"✗ {error_msg}")
-        return False, [], [error_msg]
-    except Exception as e:
-        error_msg = f"加载Excel文件时出错: {e}"
-        print(f"✗ {error_msg}")
-        return False, [], [error_msg]
 
 
 
@@ -301,21 +248,23 @@ if __name__ == "__main__":
     # 测试：从Excel生成配置
     excel_path = "config.xlsx"
     
-    # 进行验证
-    success, tasks, errors = validate_all_tasks_from_excel(excel_path)
-    
-    if not success:
-        print("\n" + "=" * 60)
-        print("验证失败，发现以下错误:")
-        print("=" * 60)
-        for i, error in enumerate(errors, 1):
-            print(f"{i}. {error}")
-        print("\n请修正错误后重新运行程序")
-        sys.exit(1)
-    else:
-        print("\n" + "=" * 60)
-        print("所有验证通过！")
-        print("=" * 60)
+    # # 进行验证
+    try:
+        success, tasks, errors = check_config.validate_task_configuration(excel_path)
+        
+        if not success:
+            print("\n程序终止: 配置验证失败")
+            sys.exit(1)
+        else:
+            print("\nconfig.xlsx 配置验证通过，可以继续执行任务调度")
+            
+    except KeyboardInterrupt:
+        print("\n\n程序被用户中断")
+        sys.exit(0)
+    except Exception as e:
+        print(f"\n程序执行出错: {e}")
+        import traceback
+        traceback.print_exc()
 
     if os.path.exists(excel_path):
         config = excel_to_config(excel_path)
