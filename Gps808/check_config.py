@@ -5,14 +5,15 @@ import pandas as pd
 from datetime import datetime
 import json
 
-def validate_task_configuration():
+def validate_task_configuration(_excel_path):
     """
     完整的任务配置验证函数
     """
     print("=" * 60)
     
     # 1. 查找Excel配置文件
-    config_file = find_config_file()
+    config_file = _excel_path
+    # config_file = find_config_file()
     if not config_file:
         print("✗ 未找到配置文件")
         return False, [], ["未找到配置文件"]
@@ -78,30 +79,6 @@ def validate_task_configuration():
         # save_validated_tasks(validated_tasks)
         
         return True, validated_tasks, []
-
-def find_config_file():
-    """
-    查找配置文件
-    """
-    possible_files = [
-        "config.xlsx"
-    ]
-    
-    # 检查当前目录下的所有Excel文件
-    current_dir = os.getcwd()
-    for root, dirs, files in os.walk(current_dir):
-        for file in files:
-            if file.lower().endswith(('.xlsx', '.xls')):
-                if 'task' in file.lower() or '配置' in file.lower():
-                    full_path = os.path.join(root, file)
-                    return full_path
-    
-    # 如果没找到，返回第一个存在的文件
-    for file_path in possible_files:
-        if os.path.exists(file_path):
-            return file_path
-    
-    return None
 
 def read_excel_file(file_path):
     """
@@ -362,39 +339,13 @@ def validate_task(task):
     
     return errors
 
-def save_validated_tasks(tasks):
-    """
-    保存验证通过的任务
-    """
-    try:
-        # 转换为可序列化的格式
-        serializable_tasks = []
-        for task in tasks:
-            serializable_task = {}
-            for key, value in task.items():
-                if isinstance(value, datetime):
-                    serializable_task[key] = value.isoformat()
-                else:
-                    serializable_task[key] = value
-            serializable_tasks.append(serializable_task)
-        
-        # 保存到文件
-        output_file = 'validated_tasks.json'
-        with open(output_file, 'w', encoding='utf-8') as f:
-            json.dump(serializable_tasks, f, ensure_ascii=False, indent=2)
-        
-        print(f"\n✓ 验证结果已保存到: {output_file}")
-        return True
-    except Exception as e:
-        print(f"✗ 保存验证结果失败: {e}")
-        return False
-
 def main():
     """
     主函数
     """
+    excel_path = "config.xlsx"
     try:
-        success, tasks, errors = validate_task_configuration()
+        success, tasks, errors = validate_task_configuration(excel_path)
         
         if not success:
             print("\n程序终止: 配置验证失败")
