@@ -10,8 +10,6 @@ def validate_task_configuration():
     完整的任务配置验证函数
     """
     print("=" * 60)
-    print("任务配置验证程序")
-    print("=" * 60)
     
     # 1. 查找Excel配置文件
     config_file = find_config_file()
@@ -26,7 +24,7 @@ def validate_task_configuration():
     if df is None:
         return False, [], ["无法读取Excel文件"]
     
-    print(f"✓ 成功读取Excel文件")
+    # print(f"✓ 成功读取Excel文件")
     print(f"  任务数量: {len(df)}")
     
     # 3. 验证所有任务
@@ -34,7 +32,7 @@ def validate_task_configuration():
     validated_tasks = []
     
     for index, row in df.iterrows():
-        print(f"\n验证任务 {index + 1}/{len(df)}...")
+        # print(f"\n验证任务 {index + 1}/{len(df)}...")
         
         # 创建任务字典
         task = create_task_from_row(row, index)
@@ -44,7 +42,7 @@ def validate_task_configuration():
         
         if errors:
             error_msg = f"任务 '{task.get('name', '未命名')}' 验证失败: {', '.join(errors)}"
-            print(f"✗ {error_msg}")
+            # print(f"✗ {error_msg}")
             all_errors.append(error_msg)
         else:
             print(f"✓ 任务 '{task['name']}' 验证通过")
@@ -68,13 +66,13 @@ def validate_task_configuration():
         print(f"{'='*60}")
         
         # 显示验证通过的任务
-        for i, task in enumerate(validated_tasks, 1):
-            print(f"\n{i}. {task['name']}")
-            print(f"   文件: {os.path.basename(task['excel_file'])}")
-            print(f"   服务器: {task['server_ip']}:{task['server_port']}")
-            print(f"   终端: {task['terminal_phone']}")
-            if 'schedule_time' in task:
-                print(f"   计划时间: {task['schedule_time']}")
+        # for i, task in enumerate(validated_tasks, 1):
+        #     print(f"\n{i}. {task['name']}")
+        #     print(f"   文件: {os.path.basename(task['excel_file'])}")
+        #     print(f"   服务器: {task['server_ip']}:{task['server_port']}")
+        #     print(f"   终端: {task['terminal_phone']}")
+        #     if 'schedule_time' in task:
+        #         print(f"   计划时间: {task['schedule_time']}")
         
         # 保存验证结果
         # save_validated_tasks(validated_tasks)
@@ -120,7 +118,7 @@ def read_excel_file(file_path):
                 else:
                     df = pd.read_excel(file_path)
                 
-                print(f"✓ 使用引擎 {engine if engine else 'auto'} 成功读取")
+                # print(f"✓ 使用引擎 {engine if engine else 'auto'} 成功读取")
                 return df
             except Exception as e:
                 print(f"  引擎 {engine if engine else 'auto'} 失败: {e}")
@@ -357,7 +355,8 @@ def validate_task(task):
         try:
             schedule_dt = datetime.strptime(task['schedule_time'], '%Y-%m-%d %H:%M:%S')
             if schedule_dt < datetime.now():
-                print(f"  警告: 计划时间已过: {task['schedule_time']}")
+                errors.append(f"  警告: 计划时间已过: {task['schedule_time']}")
+                # print(f"  警告: 计划时间已过: {task['schedule_time']}")
         except ValueError:
             errors.append(f"计划时间格式错误: {task['schedule_time']}")
     
@@ -413,6 +412,3 @@ def main():
 
 if __name__ == "__main__":
     tasks = main()
-    
-    # 这里可以继续执行任务调度
-    # 例如: schedule_tasks(tasks)
