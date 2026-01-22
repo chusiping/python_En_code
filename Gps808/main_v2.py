@@ -86,7 +86,7 @@ def main():
     # SERVER_PORT = 6608                      # 25209                          6608
     # SEND_TO_SERVER = False                   # 是否发送到服务器
 
-    process_count = 2                       # 处理前2行数据
+    process_count = 3                       # 处理前2行数据
     _altitude_A = 10                        # 海拔
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
@@ -113,6 +113,8 @@ def main():
     # A和B只能选一种 ====================================================================
     miao,excel_data = readdate_v2.read_and_process_excel(_excleFile)
     total_rows = len(excel_data)
+    if process_count == 0:
+        process_count = total_rows
     
     print(f"{'='*50}")
     if SEND_TO_SERVER:
@@ -182,7 +184,7 @@ def main():
             # print(f"    时间: {testdate.replace_date_to_today()}")
             # print(f"    制动: {brake_on}")
 
-            print(f"    处理第 {i} 条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}")
+            print(f"    发送 {_terminal_phone} 第{i}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}")
 
 
             packet,raw = temp.build_0200(
@@ -301,7 +303,7 @@ def main():
         #                 time.sleep(2)
     
 
-    print(f"[4]\n 统计结果 => 总记录数:{total_rows},还有{remaining}条记录未处理,成功处理: {success_count}  失败处理: {fail_count}")
+    print(f"\n[4] 统计结果 => 总记录数:{total_rows},还有{remaining}条记录未处理,成功处理: {success_count}  失败处理: {fail_count}")
     # 4. 显示统计结果
     # print(f"\n{'='*60}")
     # print("处理完成!")
