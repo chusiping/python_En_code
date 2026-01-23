@@ -1,0 +1,38 @@
+{
+    // 使用 IntelliSense 了解相关属性。 
+    // 悬停以查看现有属性的描述。
+    // 欲了解更多信息，请访问: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "main_v2.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_v2.py",
+            "args": ["--excel", "excle/车充轨迹.xlsx", "--phone", "13301110130","--server-ip","14.23.86.188","--server-port","6608","--no-send"],
+            "console": "integratedTerminal"
+            
+        },
+        {
+            "name": "task.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/task.py",
+            "args": ["--no-send"],
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            "pythonArgs": [
+                "-Xfrozen_modules=off",
+                "-W", "ignore::UserWarning"
+            ],
+            "env": {
+                "PYDEVD_DISABLE_FILE_VALIDATION": "1",
+                "PYTHONWARNINGS": "ignore"
+            }
+        }
+    ]
+}
+
+// 
+
+// args = ["--no-send"]
