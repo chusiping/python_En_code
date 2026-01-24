@@ -39,29 +39,6 @@ active_tasks = []  # 存储当前正在运行的任务
 running_processes = []  # 存储正在运行的进程
 task_lock = threading.Lock()  # 线程锁
 
-# 调试时才使用写死的Tasks
-# TASKS = [
-#     {
-#         "name": "任务1-车队A",
-#         "excel_file": r"excle\轨迹列表_A.xlsx",  # 完整路径
-#         "server_ip": SERVER_IP,
-#         "server_port": SERVER_PORT,
-#         "terminal_phone": "13301110130",
-#         "start_time": "15:50:50",  # 每天开始时间
-#         "description": "处理车队A的数据"
-#     },
-#     {
-#         "name": "任务2-车队B", 
-#         "excel_file": r"excle\轨迹列表_B.xlsx",
-#         "server_ip": SERVER_IP,
-#         "server_port": SERVER_PORT, 
-#         "terminal_phone": "13301110130",
-#         "start_time": "09:30:00",
-#         "description": "处理车队B的数据"
-#     }
-#     # 添加更多任务...
-# ]
-
 def load_tasks_from_json(json_file="config/tasks.json"):
     """
     直接从JSON文件加载任务配置
@@ -119,20 +96,6 @@ def run_main_process(task_config, log_dir="logs"):
     # return
 
     print(f"[{datetime.now()}] 启动任务: {task_name}")
-    # print(f"  统一编码: {encoding}")
-    # print(f"  Excel文件: {excel_file}")
-    # print(f"  参数: {phone} - {server_ip} - {server_port}")
-    # print(f"  日志: {log_file}")
-    # print(f"  命令: {' '.join(cmd)}")
-    
-    # 执行命令，重定向输出到日志文件
-    # with open(log_file, 'w', encoding=encoding) as f:
-    #     f.write(f"任务开始: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n")
-    #     f.write(f"任务名称: {task_name}\n")
-    #     f.write(f"Excel文件: {excel_file}\n")
-    #     f.write(f"参数: {phone} - {server_ip} - {server_port}\n")
-    #     f.write("-" * 50 + "\n")
-    #     f.flush()  # 立即写入
 
     # 改写
     with open(log_file, 'w', encoding=encoding) as f:
@@ -254,13 +217,6 @@ def main():
         print("没有可执行的任务，程序退出")
         return
     
-    # print("=" * 60 + "\nJT808 任务调度器启动\n" + 
-    #       f"系统时间: {datetime.now()}\n" + 
-    #       f"CPU核心数: {multiprocessing.cpu_count()}\n" + 
-    #       f"总任务数: {len(TASKS)}\n" + 
-    #       "=" * 60)
-    
-    # 显示所有任务及其计划时间
     print("\n任务列表:")
     for i, task in enumerate(TASKS, 1):
         schedule_time = task.get("schedule_time", "立即执行")
