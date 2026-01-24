@@ -9,6 +9,7 @@ import json
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
+
 # 仅此一行，全平台有效，0延迟
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 
@@ -105,7 +106,7 @@ def run_main_process(task_config, log_dir="logs"):
     
     # 构建命令行参数
     cmd = [
-        "python", "main.py",
+        "python", "main_v2.py",
         "--excel", excel_file,
         "--phone", str(phone),
         "--server-ip", str(server_ip) ,
@@ -118,19 +119,26 @@ def run_main_process(task_config, log_dir="logs"):
     # return
 
     print(f"[{datetime.now()}] 启动任务: {task_name}")
-    print(f"  统一编码: {encoding}")
-    print(f"  Excel文件: {excel_file}")
-    print(f"  参数: {phone} - {server_ip} - {server_port}")
-    print(f"  日志: {log_file}")
-    print(f"  命令: {' '.join(cmd)}")
+    # print(f"  统一编码: {encoding}")
+    # print(f"  Excel文件: {excel_file}")
+    # print(f"  参数: {phone} - {server_ip} - {server_port}")
+    # print(f"  日志: {log_file}")
+    # print(f"  命令: {' '.join(cmd)}")
     
     # 执行命令，重定向输出到日志文件
+    # with open(log_file, 'w', encoding=encoding) as f:
+    #     f.write(f"任务开始: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n")
+    #     f.write(f"任务名称: {task_name}\n")
+    #     f.write(f"Excel文件: {excel_file}\n")
+    #     f.write(f"参数: {phone} - {server_ip} - {server_port}\n")
+    #     f.write("-" * 50 + "\n")
+    #     f.flush()  # 立即写入
+
+    # 改写
     with open(log_file, 'w', encoding=encoding) as f:
-        f.write(f"任务开始: {datetime.now()}\n")
-        f.write(f"任务名称: {task_name}\n")
-        f.write(f"Excel文件: {excel_file}\n")
-        f.write(f"参数: {phone} - {server_ip} - {server_port}\n")
         f.write("-" * 50 + "\n")
+        f.write(f"{task_name}定时任务开始: {phone}-{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n")
+        f.write(f"命令: {' '.join(cmd)}")
         f.flush()  # 立即写入
         
         # 执行main.py
@@ -157,7 +165,7 @@ def run_main_process(task_config, log_dir="logs"):
     return_code = process.wait()
     
     with open(log_file, 'a', encoding=encoding) as f:
-        f.write(f"\n任务结束: {datetime.now()}\n")
+        f.write(f"\n{task_name}任务结束: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n")
         f.write(f"退出代码: {return_code}\n")
     
     print(f"[{datetime.now()}] 任务完成: {task_name}, 退出代码: {return_code}")
@@ -174,15 +182,16 @@ def start_task_if_time(task):
     target_time_str = task["schedule_time"]
     
     # 将配置时间转换为今天的datetime对象
-    target_time = datetime.strptime(target_time_str, "%H:%M:%S")
+    target_time = datetime.strptime(target_time_str, "%Y-%m-%d %H:%M:%S")
     target_datetime = now.replace(hour=target_time.hour,  minute=target_time.minute,second=target_time.second, microsecond=0)
     
     # 如果配置时间已经过去（在今天），检查是否已经执行过
-    if target_datetime <= now:
+    # if target_datetime <= now:
+    if target_datetime:# 测试的
         # 检查任务是否已经在运行列表中
         with task_lock:
             if task not in active_tasks:
-                # 添加到运行中任务列表
+                # 添加到运行中任务列表（但是并不立即执行）
                 active_tasks.append(task)
                 return True
     return False
@@ -198,7 +207,7 @@ def schedule_tasks(tasks):
         futures = []
         
         try:
-            while True:
+            while True: # 间隔5秒比对一次时间
                 # 检查所有任务
                 for task in tasks:
                     # 如果任务已经在运行中，跳过
