@@ -107,7 +107,7 @@ def run_main_process(task_config, log_dir="logs"):
     # 构建命令行参数
     cmd = [
         "python", "main_v2.py",
-        "--excel", excel_file,
+        "--excel", rf'"{excel_file}"',
         "--phone", str(phone),
         "--server-ip", str(server_ip) ,
         "--server-port",str(server_port) ,
@@ -137,7 +137,7 @@ def run_main_process(task_config, log_dir="logs"):
     # 改写
     with open(log_file, 'w', encoding=encoding) as f:
         f.write("-" * 50 + "\n")
-        f.write(f"{task_name}定时任务开始: {phone}-{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n")
+        f.write(f"{task_name}任务开始: {phone}-{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"命令: {' '.join(cmd)}")
         f.flush()  # 立即写入
         
@@ -165,7 +165,7 @@ def run_main_process(task_config, log_dir="logs"):
     return_code = process.wait()
     
     with open(log_file, 'a', encoding=encoding) as f:
-        f.write(f"\n{task_name}任务结束: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}\n")
+        f.write(f"\n{task_name}任务结束: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         f.write(f"退出代码: {return_code}\n")
     
     print(f"[{datetime.now()}] 任务完成: {task_name}, 退出代码: {return_code}")
