@@ -33,7 +33,6 @@ def load_tasks():
     with open(TASK_FILE, 'r', encoding='utf-8') as f:
         return json.load(f).get('tasks', [])
 
-
 # ==================== 时间判断 ====================
 def is_time_to_run(task, now):
     schedule_time = task.get('schedule_time')
@@ -42,14 +41,13 @@ def is_time_to_run(task, now):
     target = datetime.strptime(schedule_time, '%Y-%m-%d %H:%M:%S')
     return now >= target
 
-
 # ==================== 启动子进程 ====================
 def start_process(task):
     os.makedirs(LOG_DIR, exist_ok=True)
 
     task_name = task['name']
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_path = os.path.join(LOG_DIR, f'{task_name}_{timestamp}.log')
+    log_path = os.path.join(LOG_DIR, f"{task_name}_{timestamp}.log")
 
     cmd = [
         'python', 'main_v2.py',
@@ -63,8 +61,8 @@ def start_process(task):
         cmd.append('--send')
 
     log_file = open(log_path, 'w', encoding='utf-8')
-    log_file.write(f'[{datetime.now()}] START {task_name}\n')
-    log_file.write(f'CMD: {' '.join(cmd)}\n')
+    log_file.write(f"[{datetime.now()}] START {task_name}\n")
+    log_file.write(f"CMD: {' '.join(cmd)}\n")
     log_file.flush()
 
     proc = subprocess.Popen(
@@ -80,12 +78,11 @@ def start_process(task):
     task['_status'] = 'RUNNING'
     task['_started_at'] = datetime.now()
 
-    print(f'[{datetime.now()}] ▶ 启动任务 {task_name} (PID={proc.pid})')
-
+    print(f"[{datetime.now()}] ▶ 启动任务 {task_name} (PID={proc.pid})")
 
 # ==================== 主调度循环 ====================
 def scheduler_loop(tasks):
-    print(f'[{datetime.now()}] 调度器启动，共 {len(tasks)} 个任务')
+    print(f"[{datetime.now()}] 调度器启动，共 {len(tasks)} 个任务")
 
     for task in tasks:
         task['_status'] = 'PENDING'
@@ -96,15 +93,15 @@ def scheduler_loop(tasks):
         now = datetime.now()
 
         # 1. 回收已完成子进程
-        running = [t for t in tasks if t['_status'] == 'RUNNING']
-        for task in running:
+        running_tasks = [t for t in tasks if t['_status'] == 'RUNNING']
+        for task in running_tasks:
             proc = task['_process']
-            if proc.poll() is not None:
+            if proc.poll() is not None:  # 如果已结束
                 task['_status'] = 'FINISHED'
                 task['_finished_at'] = datetime.now()
-                task['_log_file'].write(f'[{datetime.now()}] FINISHED rc={proc.returncode}\n')
+                task['_log_file'].write(f"[{datetime.now()}] FINISHED rc={proc.returncode}\n")
                 task['_log_file'].close()
-                print(f'[{datetime.now()}] ✔ 任务完成 {task['name']} (rc={proc.returncode})')
+                print(f"[{datetime.now()}] ✔ 任务完成 {task['name']} (rc={proc.returncode})")
 
         # 2. 启动到点任务
         running_count = len([t for t in tasks if t['_status'] == 'RUNNING'])
@@ -119,32 +116,30 @@ def scheduler_loop(tasks):
                     available_slots -= 1
 
         # 3. 打印状态
-        pending = len([t for t in tasks if t['_status'] == 'PENDING'])
-        running = len([t for t in tasks if t['_status'] == 'RUNNING'])
-        finished = len([t for t in tasks if t['_status'] == 'FINISHED'])
+        pending_count = len([t for t in tasks if t['_status'] == 'PENDING'])
+        running_count = len([t for t in tasks if t['_status'] == 'RUNNING'])
+        finished_count = len([t for t in tasks if t['_status'] == 'FINISHED'])
 
-        print(f'[{now}] 状态 | 等待:{pending} 运行:{running} 完成:{finished}')
+        print(f"[{now}] 状态 | 等待:{pending_count} 运行:{running_count} 完成:{finished_count}")
 
-        if finished == len(tasks):
-            print(f'[{datetime.now()}] 🎉 所有任务完成，调度器退出')
+        if finished_count == len(tasks):
+            print(f"[{datetime.now()}] 🎉 所有任务完成，调度器退出")
             break
 
         time.sleep(CHECK_INTERVAL)
-
 
 # ==================== main ====================
 def main():
     tasks = load_tasks()
     if not tasks:
-        print('没有任务，退出')
+        print("没有任务，退出")
         return
 
-    print('任务列表:')
+    print("任务列表:")
     for i, t in enumerate(tasks, 1):
-        print(f'  {i}. {t['name']} @ {t.get('schedule_time')}')
+        print(f"  {i}. {t['name']} @ {t.get('schedule_time')}")
 
     scheduler_loop(tasks)
-
 
 if __name__ == '__main__':
     main()
