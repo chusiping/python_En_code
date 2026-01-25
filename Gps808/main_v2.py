@@ -93,7 +93,7 @@ def main():
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
-    # _miao = 2
+    _miao = 2
 
     #B方式测试： 使用外部参数传入使用 ==================================================
     # 范例：python main_v2.py --excel "车充轨迹.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
@@ -114,6 +114,7 @@ def main():
 
     # A和B只能选一种 ====================================================================
     miao,excel_data = readdate_v2.read_and_process_excel(_excleFile)
+    _miao = miao
     total_rows = len(excel_data)
     if process_count == 0:
         process_count = total_rows
