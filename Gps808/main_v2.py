@@ -8,6 +8,8 @@ import argparse
 import os
 import re
 
+
+
 # 仅此一行，全平台有效，0延迟
 os.environ['PYTHONIOENCODING'] = 'utf-8'
 
@@ -86,12 +88,12 @@ def main():
     # SERVER_PORT = 6608                      # 25209                          6608
     # SEND_TO_SERVER = False                   # 是否发送到服务器
 
-    process_count = 3                       # 处理前2行数据
+    process_count = 0                       # 处理前2行数据
     _altitude_A = 10                        # 海拔
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
-    _miao = 2
+    # _miao = 2
 
     #B方式测试： 使用外部参数传入使用 ==================================================
     # 范例：python main_v2.py --excel "车充轨迹.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
@@ -184,8 +186,8 @@ def main():
             # print(f"    时间: {testdate.replace_date_to_today()}")
             # print(f"    制动: {brake_on}")
 
-            print(f"    发送 {_terminal_phone} 第{i}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}")
-
+            print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}")
+            # print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录")
 
             packet,raw = temp.build_0200(
                 terminal_phone,
