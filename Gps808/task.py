@@ -29,12 +29,32 @@ CHECK_INTERVAL = 5  # 秒
 MAX_CONCURRENT_PROCESSES = 50
 
 # ==================== 任务加载 ====================
-def load_tasks():
+def load_tasks(now=None):
+    """
+    加载任务，只保留未来将要执行的任务（schedule_time > now）
+    """
+    if now is None:
+        now = datetime.now()
+
     with open(TASK_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f).get('tasks', [])
+        tasks = json.load(f).get('tasks', [])
+
+    future_tasks = []
+    for task in tasks:
+        schedule_time = task.get('schedule_time')
+        if not schedule_time:
+            continue  # 没有时间的任务忽略
+        target = datetime.strptime(schedule_time, '%Y-%m-%d %H:%M:%S')
+        if target > now:
+            future_tasks.append(task)
+
+    return future_tasks
 
 # ==================== 时间判断 ====================
 def is_time_to_run(task, now):
+    """
+    判断任务是否到执行时间
+    """
     schedule_time = task.get('schedule_time')
     if not schedule_time:
         return False
@@ -96,7 +116,7 @@ def scheduler_loop(tasks):
         running_tasks = [t for t in tasks if t['_status'] == 'RUNNING']
         for task in running_tasks:
             proc = task['_process']
-            if proc.poll() is not None:  # 如果已结束
+            if proc.poll() is not None:  # 已结束
                 task['_status'] = 'FINISHED'
                 task['_finished_at'] = datetime.now()
                 task['_log_file'].write(f"[{datetime.now()}] FINISHED rc={proc.returncode}\n")
@@ -130,12 +150,13 @@ def scheduler_loop(tasks):
 
 # ==================== main ====================
 def main():
-    tasks = load_tasks()
+    now = datetime.now()
+    tasks = load_tasks(now=now)
     if not tasks:
-        print("没有任务，退出")
+        print("没有未来任务，退出")
         return
 
-    print("任务列表:")
+    print("任务列表（只显示未来任务）:")
     for i, t in enumerate(tasks, 1):
         print(f"  {i}. {t['name']} @ {t.get('schedule_time')}")
 
