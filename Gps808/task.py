@@ -26,7 +26,7 @@ SEND_TO_SERVER = args.is_SEND
 TASK_FILE = 'config/tasks.json'
 LOG_DIR = 'logs'
 CHECK_INTERVAL = 5  # 秒
-MAX_CONCURRENT_PROCESSES = 10
+MAX_CONCURRENT_PROCESSES = 50
 
 # ==================== 任务加载 ====================
 def load_tasks():
@@ -50,7 +50,7 @@ def start_process(task):
     log_path = os.path.join(LOG_DIR, f"{task_name}_{timestamp}.log")
 
     cmd = [
-        'python', 'main_v2.py',
+        'python', '-u', 'main_v2.py',
         '--excel', task['excel_file'],
         '--phone', str(task['terminal_phone']),
         '--server-ip', task['server_ip'],
