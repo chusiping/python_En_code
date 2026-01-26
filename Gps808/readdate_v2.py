@@ -32,17 +32,30 @@ def read_and_process_excel(file_path):
 def max_time_diff_in_first_n(df, n=10):
     """
     计算时间列前 n 条记录中，相邻时间差（秒）的最大值
+    排除 状态 字段中包含“补传”的记录（如：4G;ACC开启;补传;行驶;...）
     """
+    # 0. 过滤掉包含“补传”的状态
+    df = df[
+        ~df['状态']
+        .fillna('')
+        .astype(str)
+        .str.contains('补传')
+    ]
+
+    # 如果过滤后数据不足 2 条，直接返回 None（防止 diff 无意义）
+    if len(df) < 2:
+        return None
+
     # 1. 按时间排序
     df = df.sort_values('时间').reset_index(drop=True)
 
-    # 2. 取前 n 条时间
+    # 2. 取前 n 条
     times = df['时间'].iloc[:n]
 
-    # 3. 计算相邻时间差（秒）
+    # 3. 相邻时间差（秒）
     diffs = times.diff().dt.total_seconds()
 
-    # 4. 去掉 NaN，取最大值
+    # 4. 最大时间差
     return diffs.dropna().max()
 
 # 主程序
