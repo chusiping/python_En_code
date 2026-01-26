@@ -55,8 +55,12 @@ def max_time_diff_in_first_n(df, n=10):
     # 3. 相邻时间差（秒）
     diffs = times.diff().dt.total_seconds()
 
-    # 4. 最大时间差
-    return diffs.dropna().max()
+    if diffs.empty:
+        return None
+
+    # 4. 众数（出现次数最多的差值）
+    most_common_diff = diffs.value_counts().idxmax()
+    return most_common_diff
 
 # 主程序
 if __name__ == "__main__":
