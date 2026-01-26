@@ -47,7 +47,8 @@ def validate_task_configuration(_excel_path):
             all_errors.append(error_msg)
         else:
             print(f"✓ 任务 '{task['name']}' 验证通过")
-            validated_tasks.append(task)
+            if(is_unfinish_task(task)):
+                validated_tasks.append(task)
     
     # 4. 输出结果
     if all_errors:
@@ -57,27 +58,15 @@ def validate_task_configuration(_excel_path):
         for i, error in enumerate(all_errors[:10], 1):
             print(f"{i}. {error}")
         
-        if len(all_errors) > 10:
-            print(f"... 还有 {len(all_errors) - 10} 个错误未显示")
+        # if len(all_errors) > 10:
+        #     print(f"... 还有 {len(all_errors) - 10} 个错误未显示")
         
         return False, validated_tasks, all_errors
     else:
         print(f"\n{'='*60}")
         print(f"验证成功！所有 {len(validated_tasks)} 个任务通过验证")
         print(f"{'='*60}")
-        
-        # 显示验证通过的任务
-        # for i, task in enumerate(validated_tasks, 1):
-        #     print(f"\n{i}. {task['name']}")
-        #     print(f"   文件: {os.path.basename(task['excel_file'])}")
-        #     print(f"   服务器: {task['server_ip']}:{task['server_port']}")
-        #     print(f"   终端: {task['terminal_phone']}")
-        #     if 'schedule_time' in task:
-        #         print(f"   计划时间: {task['schedule_time']}")
-        
-        # 保存验证结果
-        # save_validated_tasks(validated_tasks)
-        
+
         return True, validated_tasks, []
 
 def read_excel_file(file_path):
@@ -264,6 +253,17 @@ def clean_phone_number(phone_value):
         # 如果不是11位，返回原始清理后的字符串（用于错误提示）
         return phone_str
     
+def is_unfinish_task(task):
+    """
+    判断任务是否到执行时间
+    """
+    now = datetime.now()
+    schedule_time = task.get('schedule_time')
+    if not schedule_time:
+        return False
+    target = datetime.strptime(schedule_time, '%Y-%m-%d %H:%M:%S')
+    return now < target
+
 def validate_task(task):
     """
     验证单个任务
@@ -332,8 +332,8 @@ def validate_task(task):
         try:
             schedule_dt = datetime.strptime(task['schedule_time'], '%Y-%m-%d %H:%M:%S')
             if schedule_dt < datetime.now():
-                errors.append(f"  警告: 计划时间已过: {task['schedule_time']}")
-                # print(f"  警告: 计划时间已过: {task['schedule_time']}")
+                # errors.append(f"  警告: 计划时间已过: {task['schedule_time']}")
+                print(f"  警告: 计划时间已过: {task['schedule_time']}")
         except ValueError:
             errors.append(f"计划时间格式错误: {task['schedule_time']}")
     
