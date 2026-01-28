@@ -155,7 +155,9 @@ def main():
     
 
     print(f"[2] 处理前{process_count}条记录:")
-    
+
+    GPS_lat = []
+    GPS_long = []
     for i in range(0, min(process_count, total_rows)):  # 从第1行开始，跳过表头(改了)
         # print(f"\n{'='*50}")
         # print(f"\n  处理第 {i} 条记录:")
@@ -175,18 +177,28 @@ def main():
             status=3             #0未开启未定位    1 ACC开启 + 未定位  acc开启是3
             brake_on=False       #刹车开启
             satellite_count=random.randint(_satellite_count_A, _satellite_count_B)    
-            new_lat, new_lon = testdate.add_gps_noise(latitude, longitude, max_offset_meters=15)
+            new_lat = 0
+            new_lon = 0 
+            # new_lat_t, new_lon_t = testdate.add_gps_noise(latitude, longitude, max_offset_meters=15)
+            if i == 0 or excel_data[i][2] != excel_data[i-1][2]:
+                new_lat, new_lon = testdate.add_gps_noise(latitude, longitude, max_offset_meters=15)
+            else:
+                new_lat = GPS_lat[i-1]
+                new_lon = GPS_long[i-1]
+            GPS_lat.append(new_lat)
+            GPS_long.append(new_lon)
 
             if '里程：' in excel_data[i][5]:
                 mileage_part = excel_data[i][5].split(';')[0].split('：')[1].split('km')[0]
                 mileage = int(float(mileage_part)*10)
             if '制动信号' in excel_data[i][5]:
                 brake_on = True
+            if 'ACC开启' in excel_data[i][5]:
+                status = 2      #2 ACC 关闭 + 定位有效
 
             # 增加判断两条数据之间的时间差秒，用来模仿真实数据的停顿
             if i + 1 < total_rows:
                 _miao = diff_seconds_safe(excel_data[i][1], excel_data[i+1][1])
-                # print(f"   miao: {_miao}")
 
             # print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
             # print(f"    手机: {terminal_phone}")
@@ -200,7 +212,7 @@ def main():
             # print(f"    制动: {brake_on}")
 
             print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}  等待{_miao}秒")
-            # print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录")
+            # print(f"    纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon}")
 
             packet,raw = temp.build_0200(
                 terminal_phone,
