@@ -79,6 +79,13 @@ def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608)
                 sock.close()
             except:
                 pass
+def diff_seconds_safe(t1, t2):
+    try:
+        diff_sec = int(abs((t2 - t1).total_seconds()))
+        return diff_sec
+    except Exception:
+        return 28
+
 
 def main():
     #A方式测试： 服务器配置(独立测试使用)==============================================
@@ -114,7 +121,7 @@ def main():
 
     # A和B只能选一种 ====================================================================
     miao,excel_data = readdate_v2.read_and_process_excel(_excleFile)
-    _miao = miao
+    # _miao = miao
     total_rows = len(excel_data)
     if process_count == 0:
         process_count = total_rows
@@ -176,6 +183,11 @@ def main():
             if '制动信号' in excel_data[i][5]:
                 brake_on = True
 
+            # 增加判断两条数据之间的时间差秒，用来模仿真实数据的停顿
+            if i + 1 < total_rows:
+                _miao = diff_seconds_safe(excel_data[i][1], excel_data[i+1][1])
+                # print(f"   miao: {_miao}")
+
             # print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
             # print(f"    手机: {terminal_phone}")
             # print(f"    纬度: {latitude} 偏移后{new_lat}")
@@ -187,7 +199,7 @@ def main():
             # print(f"    时间: {testdate.replace_date_to_today()}")
             # print(f"    制动: {brake_on}")
 
-            print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}")
+            print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}  等待{_miao}秒")
             # print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录")
 
             packet,raw = temp.build_0200(
