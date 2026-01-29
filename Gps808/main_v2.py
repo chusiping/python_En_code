@@ -42,25 +42,25 @@ def send_808_packet_tcp(packet_data, server_ip='14.23.86.188', server_port=6608)
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.settimeout(10.0)  # 设置超时时间
         
-        print(f"    连接到 {server_ip}:{server_port}...")
+        # print(f"    连接到 {server_ip}:{server_port}...")
         sock.connect((server_ip, server_port))
-        print("     ✓ 连接成功!")
+        # print("     ✓ 连接成功!")
         
-        print(f"    发送数据包 ({len(packet_data)} 字节)...")
+        # print(f"    发送数据包 ({len(packet_data)} 字节)...")
         sock.sendall(packet_data)
         print("     ✓ 发送成功!")
         
         # 接收服务器响应
-        print("  等待响应...")
+        # print("  等待响应...")
         response = sock.recv(1024)
         
-        if response:
-            print(f"  ✓ 收到响应 ({len(response)} 字节):")
-            print(f"    HEX: {response.hex().upper()}")
-            # print(f"    明文: {zhuanhuan.parse_808_response(response)}")
+        # if response:
+        #     print(f"     ✓ 收到响应 ({len(response)} 字节):")
+        #     # print(f"    HEX: {response.hex().upper()}")
+        #     # print(f"    明文: {zhuanhuan.parse_808_response(response)}")
 
-        else:
-            print("  ⓘ 收到空响应")
+        # else:
+        #     print("  ⓘ 收到空响应")
             
         return True, response
         
@@ -128,7 +128,7 @@ def main():
     
     print(f"{'='*50}")
     if SEND_TO_SERVER:
-        print(f"\n√[1] 正式发送: {SERVER_IP}:{SERVER_PORT} 间隔{_miao}秒")
+        print(f"\n[1] 正式发送: {SERVER_IP}:{SERVER_PORT} 间隔{_miao}秒")
     else:
         print(f"\n[1] 演示模式: 仅生成数据包，不真实发送。间隔{_miao}秒, 总{total_rows}行数据")
     print(f"    发送任务: {_excleFile} - 终端:{_terminal_phone} - 服务器:{SERVER_IP}:{SERVER_PORT}")
@@ -212,8 +212,8 @@ def main():
             # print(f"    方向: {direction}°")
             # print(f"    时间: {testdate.replace_date_to_today()}")
             # print(f"    制动: {brake_on}")
-
-            print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on} acc:{status}  等待{_miao}秒")
+            print(f"\n[发送到服务器]")
+            print(f"     发送 {_terminal_phone} 第{i+1}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on} acc:{status}  等待{_miao}秒")
             # print(f"    纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon}")
 
             packet,raw = temp.build_0200(
@@ -247,15 +247,15 @@ def main():
             
             # 发送数据包到服务器
             if SEND_TO_SERVER:
-                print(f"\n[发送到服务器]")
+                # print(f"\n[发送到服务器]")
                 success, response = send_808_packet_tcp(packet, SERVER_IP, SERVER_PORT)
                 
                 if success:
                     success_count += 1
-                    print(f"    ✓ 第{i}条记录处理完成")
+                    print(f"     ✓ 第{i+1}条记录处理完成")
                 else:
                     fail_count += 1
-                    print(f"    ✗ 第{i}条记录发送失败")
+                    print(f"    ✗ 第{i+1}条记录发送失败")
             else:
                 success_count += 1
                 # print(f"\nⓘ 演示模式: 跳过发送")
