@@ -193,9 +193,11 @@ def main():
                 mileage = int(float(mileage_part)*10)
             if '制动信号' in excel_data[i][5]:
                 brake_on = True
-            if 'ACC开启' in excel_data[i][5]:
+            if 'ACC关闭' in excel_data[i][5]:
                 status = 2      #2 ACC 关闭 + 定位有效
-
+            if 'ACC开启' in excel_data[i][5] and '未定位' in excel_data[i][5] :
+                status = 1      #1 ACC开启 + 未定位
+            
             # 增加判断两条数据之间的时间差秒，用来模仿真实数据的停顿
             if i + 1 < total_rows:
                 _miao = diff_seconds_safe(excel_data[i][1], excel_data[i+1][1])
@@ -211,7 +213,7 @@ def main():
             # print(f"    时间: {testdate.replace_date_to_today()}")
             # print(f"    制动: {brake_on}")
 
-            print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on}  等待{_miao}秒")
+            print(f"    发送 {_terminal_phone} 第{i}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on} acc:{status}  等待{_miao}秒")
             # print(f"    纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon}")
 
             packet,raw = temp.build_0200(
