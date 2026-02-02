@@ -2,6 +2,7 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 set PYTHONUNBUFFERED=1
+REM 程序后台执行中，请勿关闭此窗口，可查看run.log
 start "" /b python -u task.py --no-send >> run.log 2>&1
 
 
