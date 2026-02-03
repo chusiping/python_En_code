@@ -195,9 +195,10 @@ def main():
                 brake_on = True
             if 'ACC关闭' in excel_data[i][5]:
                 status = 2      #2 ACC 关闭 + 定位有效
-                speed = _speed
+                speed = _speed  # 速度为零
             if 'ACC开启' in excel_data[i][5] and '未定位' in excel_data[i][5] :
                 status = 1      #1 ACC开启 + 未定位
+                speed = _speed  # 速度为零
             
             # 增加判断两条数据之间的时间差秒，用来模仿真实数据的停顿
             if i + 1 < total_rows:
