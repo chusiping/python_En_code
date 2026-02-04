@@ -4,6 +4,7 @@ from datetime import datetime
 import os
 import argparse
 import json
+import logging
 
 # ==================== 环境设置 ====================
 os.environ['PYTHONIOENCODING'] = 'utf-8'
@@ -27,6 +28,20 @@ TASK_FILE = 'config/tasks.json'
 LOG_DIR = 'logs'
 CHECK_INTERVAL = 5  # 秒
 MAX_CONCURRENT_PROCESSES = 50
+
+# 创建日志文件名（包含日期）
+LOG_FILENAME = f"logs/run_{datetime.now().strftime('%Y_%m_%d_%H%M%S')}.log"
+
+# 配置日志
+logging.basicConfig(
+    level=logging.INFO,
+    format='[%(asctime)s] %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S',
+    handlers=[
+        logging.FileHandler(LOG_FILENAME, encoding='utf-8'),
+        logging.StreamHandler()  # 同时输出到控制台（可选）
+    ]
+)
 
 # ==================== 任务加载 ====================
 def load_tasks(now=None):
@@ -102,7 +117,8 @@ def start_process(task):
 
 # ==================== 主调度循环 ====================
 def scheduler_loop(tasks):
-    print(f"[{datetime.now()}] 调度器启动，共 {len(tasks)} 个任务")
+    # 使用logging.info替代print
+    logging.info(f"调度器启动，共 {len(tasks)} 个任务")
 
     for task in tasks:
         task['_status'] = 'PENDING'
@@ -121,7 +137,7 @@ def scheduler_loop(tasks):
                 task['_finished_at'] = datetime.now()
                 task['_log_file'].write(f"[{datetime.now()}] FINISHED rc={proc.returncode}\n")
                 task['_log_file'].close()
-                print(f"[{datetime.now()}] ✔ 任务完成 {task['name']} (rc={proc.returncode})")
+                logging.info(f"[{datetime.now()}] ✔ 任务完成 {task['name']} (rc={proc.returncode})")
 
         # 2. 启动到点任务
         running_count = len([t for t in tasks if t['_status'] == 'RUNNING'])
@@ -140,10 +156,10 @@ def scheduler_loop(tasks):
         running_count = len([t for t in tasks if t['_status'] == 'RUNNING'])
         finished_count = len([t for t in tasks if t['_status'] == 'FINISHED'])
 
-        print(f"[{now}] 状态 | 等待:{pending_count} 运行:{running_count} 完成:{finished_count}")
+        logging.info(f"[{now}] 状态 | 等待:{pending_count} 运行:{running_count} 完成:{finished_count}")
 
         if finished_count == len(tasks):
-            print(f"[{datetime.now()}] 🎉 所有任务完成，调度器退出")
+            logging.info("[{datetime.now()}]🎉 所有任务完成，调度器退出")
             break
 
         time.sleep(CHECK_INTERVAL)
@@ -153,12 +169,12 @@ def main():
     now = datetime.now()
     tasks = load_tasks(now=now)
     if not tasks:
-        print("没有未来任务，退出")
+        logging.info("没有未来任务，退出")
         return
 
-    print("任务列表（只显示未来任务）:")
+    logging.info("任务列表（只显示未来任务）:")
     for i, t in enumerate(tasks, 1):
-        print(f"  {i}. {t['name']} @ {t.get('schedule_time')}")
+        logging.info(f"  {i}. {t['name']} @ {t.get('schedule_time')}")
 
     scheduler_loop(tasks)
 
