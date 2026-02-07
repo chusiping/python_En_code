@@ -25,8 +25,18 @@ def validate_task_configuration(_excel_path):
     if df is None:
         return False, [], ["无法读取Excel文件"]
     
-    # print(f"✓ 成功读取Excel文件")
-    print(f"  任务数量: {len(df)}")
+    # 2.1 校验 name 是否唯一
+    name_errors = validate_unique_task_names(df)
+    if name_errors:
+        print(f"\n{'='*60}")
+        print("✗ name 列校验失败")
+        print(f"{'='*60}")
+        for err in name_errors:
+            print(err)
+        return False, [], name_errors
+
+        # print(f"✓ 成功读取Excel文件")
+        print(f"  任务数量: {len(df)}")
     
     # 3. 验证所有任务
     all_errors = []
@@ -322,6 +332,25 @@ def validate_task(task):
             errors.append(f"计划时间格式错误: {task['schedule_time']}")
     
     return errors
+
+def validate_unique_task_names(df):
+    """
+    校验 Excel 中 name 列是否唯一
+    """
+    if 'name' not in df.columns:
+        return ["Excel中缺少 name 列"]
+
+    # 去空、转字符串
+    names = df['name'].dropna().astype(str).str.strip()
+
+    # 找出重复的 name
+    duplicated = names[names.duplicated(keep=False)]
+
+    if not duplicated.empty:
+        dup_names = sorted(set(duplicated.tolist()))
+        return [f"name 列存在重复值: {', '.join(dup_names)}"]
+
+    return []
 
 def main():
     """
