@@ -35,9 +35,9 @@ def validate_task_configuration(_excel_path):
             print(err)
         return False, [], name_errors
 
-        # print(f"✓ 成功读取Excel文件")
-        print(f"  任务数量: {len(df)}")
-    
+    # print(f"✓ 成功读取Excel文件")
+    print(f"  任务数量: {len(df)}")
+
     # 3. 验证所有任务
     all_errors = []
     validated_tasks = []
