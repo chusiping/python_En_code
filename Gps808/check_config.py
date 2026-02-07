@@ -277,23 +277,7 @@ def validate_task(task):
     else:
         # 尝试查找文件
         if not os.path.exists(excel_file):
-            # 尝试在excle目录下查找
-            filename = os.path.basename(excel_file)
-            possible_paths = [
-                os.path.join('excle', filename),
-                os.path.join('excel', filename),
-                filename,
-            ]
-            
-            found = False
-            for path in possible_paths:
-                if os.path.exists(path):
-                    task['excel_file'] = os.path.abspath(path)
-                    found = True
-                    break
-            
-            if not found:
-                errors.append(f"Excel文件不存在: {excel_file}")
+            errors.append(f"Excel文件不存在: {excel_file}")
         else:
             task['excel_file'] = os.path.abspath(excel_file)
         
