@@ -56,8 +56,8 @@ def validate_task_configuration(_excel_path):
             # print(f"✗ {error_msg}")
             all_errors.append(error_msg)
         else:
-            print(f"✓ 任务 '{task['name']}' 验证通过")
             if(is_unfinish_task(task)):
+                print(f"✓ 任务 '{task['name']}' 验证通过")
                 validated_tasks.append(task)
     
     # 4. 输出结果
@@ -327,7 +327,7 @@ def validate_task(task):
             schedule_dt = datetime.strptime(task['schedule_time'], '%Y-%m-%d %H:%M:%S')
             if schedule_dt < datetime.now():
                 # errors.append(f"  警告: 计划时间已过: {task['schedule_time']}")
-                print(f"  警告: 计划时间已过: {task['schedule_time']}")
+                print(f"  警告: {task['name']} 计划时间已过: {task['schedule_time']}")
         except ValueError:
             errors.append(f"计划时间格式错误: {task['schedule_time']}")
     

@@ -76,9 +76,9 @@ def excel_to_config(excel_path, output_dir="config"):
             "description": str(row.get('description', '')).strip(),
             "schedule_note": schedule_note
         }
-
-        tasks.append(task)
-        print(f"  -{index+1}.添加配置: {task['name']}")
+        if schedule_time and schedule_time > datetime.now().strftime("%Y-%m-%d %H:%M:%S"):    
+            tasks.append(task)
+            print(f"  -{index+1}.添加配置: {task['name']}")
     
     # 创建输出目录
     os.makedirs(output_dir, exist_ok=True)
