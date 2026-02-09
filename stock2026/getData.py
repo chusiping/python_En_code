@@ -60,17 +60,23 @@ def normalize_ts_code(code):
 
 def get_stock_name(ts_code, code, stock_list):
     """获取股票名称"""
-    if stock_list is not None:
+    if stock_list is not None and not stock_list.empty:
         match = stock_list[stock_list['ts_code'] == ts_code]
         if not match.empty:
-            return match['name'].values[0]
-    return code
+            name = match['name'].values[0]
+            if name and str(name).strip():
+                return name
+    return ts_code
 
 
 def fetch_daily_data(pro, ts_code, start_date, end_date):
     """获取日线行情数据"""
     try:
-        return pro.daily(ts_code=ts_code, start_date=start_date, end_date=end_date)
+        # stock_info = pro.stock_basic(ts_code=ts_code)
+        # stock_name = stock_info['name'].values[0] if len(stock_info) > 0 else '未知'
+        df = pro.daily(ts_code=ts_code, start_date=start_date, end_date=end_date)
+        df = df.sort_values('trade_date')
+        return df
     except Exception as e:
         print(f"查询 {ts_code} 时出错: {e}")
         return None
@@ -117,17 +123,19 @@ def save_daily_to_db(df, conn):
     conn.commit()
 
 
-def process_stock(pro, code, start_date, end_date, stock_list, conn):
+def process_stock(pro, code,stock_name, start_date, end_date, stock_list, conn):
     """处理单只股票的数据获取和保存"""
     ts_code = normalize_ts_code(code)
-    stock_name = get_stock_name(ts_code, code, stock_list)
+    # stock_name = get_stock_name(ts_code, code, stock_list)
     
+    df = fetch_daily_data(pro, ts_code, start_date, end_date)
+
     print(f"\n{'='*50}")
     print(f"股票代码: {ts_code}")
     print(f"股票名称: {stock_name}")
     print(f"{'='*50}")
     
-    df = fetch_daily_data(pro, ts_code, start_date, end_date)
+    
     if df is None or df.empty:
         print(f"无 {ts_code} 的日线数据.")
         return
@@ -144,8 +152,8 @@ def main():
     
     # 获取配置参数
     days = config.get('days', 90)
-    stock_codes = config.get('stock_codes', ['600519'])
-    
+    # stock_codes = config.get('stock_codes', ['600519'])
+    stock_codes = config.get("stock_codes")
     # 计算日期
     start_date, end_date = calculate_dates(days)
     
@@ -153,8 +161,10 @@ def main():
     stock_list = get_stock_list(pro)
     
     # 处理每只股票
-    for code in stock_codes:
-        process_stock(pro, code, start_date, end_date, stock_list, conn)
+    for stock in stock_codes:
+        code = stock["code"]
+        name = stock["name"]
+        process_stock(pro, code,name, start_date, end_date, stock_list, conn)
     
     conn.close()
 
