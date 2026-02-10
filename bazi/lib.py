@@ -1,4 +1,4 @@
-# 羊刃
+# 羊刃 干见支
 YANG_REN_MAP = {
     "甲": "卯",
     "乙": "寅",
@@ -11,7 +11,7 @@ YANG_REN_MAP = {
     "壬": "子",
     "癸": "亥",
 }
-# 福禄
+# 福禄 干见支
 LU_MAP = {
     "甲": "寅",
     "乙": "卯",
@@ -25,7 +25,7 @@ LU_MAP = {
     "癸": "子",
 }
 
-# 驿马
+# 驿马 支见支
 YI_MA_MAP = {
     "申": "寅",
     "子": "寅",
@@ -43,7 +43,7 @@ YI_MA_MAP = {
     "卯": "巳",
     "未": "巳",
 }
-#文昌
+#文昌 干见支
 WEN_CHANG_MAP = {
     "甲": "巳",
     "乙": "午",
@@ -78,6 +78,7 @@ YANG_REN = {
     "type": "mapping",
     "map": YANG_REN_MAP,
     "stem_key": "day_stem",
+    "target": "branch",
     "intro": "以日干为主，命局见其刃支者为羊刃"
                 # 年柱有羊刃：出身家庭可能普通或早年经历艰苦，也可能祖上或父母性格刚强。
                 # 月柱有羊刃：称为“月刃”，个性最为突出，兄弟缘薄或易有争执。
@@ -93,6 +94,7 @@ LU = {
     "type": "mapping",
     "map": LU_MAP,
     "stem_key": "day_stem",
+    "target": "branch",
     "intro": "以日干为主，命局见其禄支者为有禄"
 }
 
@@ -111,9 +113,10 @@ WEN_CHANG = {
     "type": "mapping",
     "map": WEN_CHANG_MAP,
     "stem_key": "day_stem",
+    "target": "branch",
     "intro": "以日干为主，命局见其文昌支者为文昌"
 }
-
+# 新方法通过后，这个可以删除
 def match_mapping_rule222(bazi: dict, stem_key: str, branch_map: dict) -> bool:
     """
     通用映射型规则：
@@ -136,37 +139,56 @@ def match_mapping_rule222(bazi: dict, stem_key: str, branch_map: dict) -> bool:
     # 最后看是否匹配
     return target_branch in branches
 
-def match_mapping_rule(bazi: dict, stem_key, branch_map: dict) -> bool:
+def match_mapping_rule(bazi: dict, stem_key, rule_map: dict, target: str = "branch") -> bool:
     """
     通用映射型规则：
-    stem_key 可以是字符串或列表
+    - stem_key: 主键，可以是 str 或 list
+    - target: "branch" 或 "stem"，决定去命局哪里找
     """
-    # 统一转成列表
+    # 主键统一成列表
     if isinstance(stem_key, str):
         stem_keys = [stem_key]
     else:
         stem_keys = stem_key
+
+    # 根据 target 决定搜索池
+    if target == "branch":
+        pool = {
+            bazi.get("year_branch"),
+            bazi.get("month_branch"),
+            bazi.get("day_branch"),
+            bazi.get("hour_branch"),
+        }
+    elif target == "stem":
+        pool = {
+            bazi.get("year_stem"),
+            bazi.get("month_stem"),
+            bazi.get("day_stem"),
+            bazi.get("hour_stem"),
+        }
+    else:
+        raise ValueError(f"未知的 target 类型: {target}")
 
     for key in stem_keys:
         main = bazi.get(key)
         if not main:
             continue
 
-        target_branch = branch_map.get(main)
-        if not target_branch:
+        target_value = rule_map.get(main)
+        if not target_value:
             continue
 
-        branches = {
-            bazi.get("year_branch"),
-            bazi.get("month_branch"),
-            bazi.get("day_branch"),
-            bazi.get("hour_branch"),
-        }
+        # 统一成集合
+        if isinstance(target_value, str):
+            targets = {target_value}
+        else:
+            targets = set(target_value)
 
-        if target_branch in branches:
+        if pool & targets:
             return True
 
     return False
+
 
 
 
@@ -187,7 +209,7 @@ def find_gods(bazi):
 
         # 第二层：映射规则（羊刃 / 禄）
         if g.get("type") == "mapping":
-            if match_mapping_rule(bazi,g["stem_key"],g["map"]):
+            if match_mapping_rule(bazi,g["stem_key"],g["map"],g.get("target", "branch")):
                 result.append({
                     "name": g["name"],
                     "intro": g.get("intro", "")
