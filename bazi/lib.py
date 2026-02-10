@@ -1,19 +1,3 @@
-
-# 四废日
-SI_FEI_RI = {
-    "name": "四废日",
-    "rules": [
-        {"month_branch": {"寅","卯","辰"},"day": {"庚申","辛酉"}},
-        {"month_branch": {"巳","午","未"},"day": {"壬子","癸亥"}}
-    ],
-    "intro": "月令与日柱相废"
-}
-# 魁罡
-KUI_GANG = {
-    "name": "魁罡",
-    "rules": [{"day": {"庚辰", "庚戌", "壬辰", "壬戌"}}],
-    "intro": "日柱为庚辰、庚戌、壬辰、壬戌者，为魁罡日"
-}
 # 羊刃
 YANG_REN_MAP = {
     "甲": "卯",
@@ -41,19 +25,53 @@ LU_MAP = {
     "癸": "子",
 }
 
-def match_yang_ren(bazi: dict) -> bool:
+
+# 四废日
+SI_FEI_RI = {
+    "name": "四废日",
+    "rules": [
+        {"month_branch": {"寅","卯","辰"},"day": {"庚申","辛酉"}},
+        {"month_branch": {"巳","午","未"},"day": {"壬子","癸亥"}}
+    ],
+    "intro": "月令与日柱相废"
+}
+# 魁罡
+KUI_GANG = {
+    "name": "魁罡",
+    "rules": [{"day": {"庚辰", "庚戌", "壬辰", "壬戌"}}],
+    "intro": "日柱为庚辰、庚戌、壬辰、壬戌者，为魁罡日"
+}
+
+YANG_REN = {
+    "name": "羊刃",
+    "type": "mapping",
+    "map": YANG_REN_MAP,
+    "stem_key": "day_stem",
+    "intro": "以日干为主，命局见其刃支者为羊刃"
+}
+
+LU = {
+    "name": "禄",
+    "type": "mapping",
+    "map": LU_MAP,
+    "stem_key": "day_stem",
+    "intro": "以日干为主，命局见其禄支者为有禄"
+}
+
+
+def match_mapping_rule(bazi: dict, stem_key: str, branch_map: dict) -> bool:
     """
-    羊刃规则（第二层：映射型规则）
+    通用映射型规则：
+    以某干为主，判断其对应地支是否出现在命局
     """
-    day_stem = bazi.get("day_stem")
-    if not day_stem:
+    stem = bazi.get(stem_key)
+    if not stem:
         return False
 
-    yang_ren_branch = YANG_REN_MAP.get(day_stem)
-    if not yang_ren_branch:
+    target_branch = branch_map.get(stem)
+    if not target_branch:
         return False
 
-    # 命局中是否出现羊刃地支
     branches = {
         bazi.get("year_branch"),
         bazi.get("month_branch"),
@@ -61,17 +79,13 @@ def match_yang_ren(bazi: dict) -> bool:
         bazi.get("hour_branch"),
     }
 
-    return yang_ren_branch in branches
+    return target_branch in branches
 
-YANG_REN = {
-    "name": "羊刃",
-    "type": "mapping",
-    "match": match_yang_ren,
-    "intro": "以日干为主，命局见其刃支者为羊刃"
-}
 
-# 神煞  四废日 魁罡 羊刃
-ALL_GODS = [SI_FEI_RI, KUI_GANG,YANG_REN]
+
+
+# 神煞  四废日 魁罡 羊刃 福禄
+ALL_GODS = [SI_FEI_RI, KUI_GANG,YANG_REN,LU]
 
 # 取神煞
 def find_gods(bazi):
@@ -85,15 +99,20 @@ def find_gods(bazi):
                 "intro": g.get("intro", "")
             })
 
-        # 第二层：映射规则
+        # 第二层：映射规则（羊刃 / 禄）
         if g.get("type") == "mapping":
-            if g["match"](bazi):
+            if match_mapping_rule(
+                bazi,
+                g["stem_key"],
+                g["map"]
+            ):
                 result.append({
                     "name": g["name"],
                     "intro": g.get("intro", "")
                 })
 
     return result
+
 
 def match_rule_group(bazi: dict, rule: dict) -> bool:
     """单组 AND 规则"""
@@ -157,12 +176,13 @@ def convert_bazi(bazi_str):
 
 
 if __name__ == "__main__":
-    bazi1 = convert_bazi("戊午,壬寅,庚申,戊寅")
-    bazi2 = convert_bazi("戊午,壬寅,庚戌,戊寅")
+    bazi1 = convert_bazi("戊午,戊午,癸亥,戊寅")
+    bazi2 = convert_bazi("戊午,壬寅,庚戌,己巳")
     bazi3 = convert_bazi("戊午,壬子,甲子,辛卯")
+    bazi4 = convert_bazi("戊午,壬子,甲子,戊寅")
 
     bazi_Arr = [
-        bazi1,bazi2,bazi3
+        bazi1,bazi2,bazi3,bazi4
     ]
     # for i, g in enumerate(bazi_Arr, start=1):  
     for i, _bazi in enumerate(bazi_Arr, start=1):
