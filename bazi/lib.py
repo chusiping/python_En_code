@@ -14,19 +14,72 @@ KUI_GANG = {
     "rules": [{"day": {"庚辰", "庚戌", "壬辰", "壬戌"}}],
     "intro": "日柱为庚辰、庚戌、壬辰、壬戌者，为魁罡日"
 }
+# 羊刃
+YANG_REN_MAP = {
+    "甲": "卯",
+    "乙": "寅",
+    "丙": "午",
+    "丁": "巳",
+    "戊": "午",
+    "己": "巳",
+    "庚": "酉",
+    "辛": "申",
+    "壬": "子",
+    "癸": "亥",
+}
 
-# 神煞  四废日 魁罡
-ALL_GODS = [SI_FEI_RI, KUI_GANG]
+def match_yang_ren(bazi: dict) -> bool:
+    """
+    羊刃规则（第二层：映射型规则）
+    """
+    day_stem = bazi.get("day_stem")
+    if not day_stem:
+        return False
+
+    yang_ren_branch = YANG_REN_MAP.get(day_stem)
+    if not yang_ren_branch:
+        return False
+
+    # 命局中是否出现羊刃地支
+    branches = {
+        bazi.get("year_branch"),
+        bazi.get("month_branch"),
+        bazi.get("day_branch"),
+        bazi.get("hour_branch"),
+    }
+
+    return yang_ren_branch in branches
+
+YANG_REN = {
+    "name": "羊刃",
+    "type": "mapping",
+    "match": match_yang_ren,
+    "intro": "以日干为主，命局见其刃支者为羊刃"
+}
+
+# 神煞  四废日 魁罡 羊刃
+ALL_GODS = [SI_FEI_RI, KUI_GANG,YANG_REN]
 
 # 取神煞
 def find_gods(bazi):
     result = []
+
     for g in ALL_GODS:
-        if match_rules(bazi, g["rules"]):
+        # 第一层：集合规则
+        if g.get("rules") and match_rules(bazi, g["rules"]):
             result.append({
                 "name": g["name"],
                 "intro": g.get("intro", "")
             })
+
+        # 第二层：映射规则
+        if g.get("type") == "mapping":
+            if g["match"](bazi):
+                result.append({
+                    "name": g["name"],
+                    "intro": g.get("intro", "")
+                })
+
     return result
 
 def match_rule_group(bazi: dict, rule: dict) -> bool:
@@ -89,16 +142,17 @@ def convert_bazi(bazi_str):
     return bazi
 
 
+
 if __name__ == "__main__":
-    bazi = convert_bazi("戊午,壬寅,庚申,戊寅")
+    bazi1 = convert_bazi("戊午,壬寅,庚申,戊寅")
+    bazi2 = convert_bazi("戊午,壬寅,庚戌,戊寅")
+    bazi3 = convert_bazi("戊午,壬子,甲子,辛卯")
+
     bazi_Arr = [
-        bazi,
-        {"day":"庚辰"},
-        {"month_branch":"子","day":"甲子"},
+        bazi1,bazi2,bazi3
     ]
-    
-    for _bazi in bazi_Arr:
+    # for i, g in enumerate(bazi_Arr, start=1):  
+    for i, _bazi in enumerate(bazi_Arr, start=1):
         gods = find_gods(_bazi)
         for g in gods:
-            print(f"{g['name']}：{g['intro']}")
-        # print(f"{g['name']}：{g['intro']}")
+            print(f"八字{i}.　　{g['name']}：{g['intro']}")
