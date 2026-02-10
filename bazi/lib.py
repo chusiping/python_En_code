@@ -102,6 +102,7 @@ YI_MA = {
     "type": "mapping",
     "map": YI_MA_MAP,
     "stem_key": ["day_branch", "year_branch"],
+    "target": "branch", # 要么是branch，要么是stem
     "intro": "以年支或日支，命局见其驿马者为驿马"
 }
 # 文昌
