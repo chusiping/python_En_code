@@ -112,21 +112,21 @@ def match_mapping_rule(bazi: dict, stem_key: str, branch_map: dict) -> bool:
     通用映射型规则：
     以某干为主，判断其对应地支是否出现在命局
     """
-    stem = bazi.get(stem_key)
+    stem = bazi.get(stem_key)  # stem_key 是键的名称类似 day_stem,通过键取出值比如：甲
     if not stem:
         return False
 
-    target_branch = branch_map.get(stem)
+    target_branch = branch_map.get(stem) # 通过甲找对map对象里对应的值比如：寅
     if not target_branch:
         return False
-
+    # 取得八字的四个地址
     branches = {
         bazi.get("year_branch"),
         bazi.get("month_branch"),
         bazi.get("day_branch"),
         bazi.get("hour_branch"),
     }
-
+    # 最后看是否匹配
     return target_branch in branches
 
 
