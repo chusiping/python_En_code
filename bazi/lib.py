@@ -96,7 +96,7 @@ YI_MA = {
     "type": "mapping",
     "map": YI_MA_MAP,
     "stem_key": "day_branch",  # 也可换成 year_branch
-    "intro": "以日支为主，命局见其驿马者为驿马"
+    "intro": "以年支或日支，命局见其驿马者为驿马"
 }
 # 文昌
 WEN_CHANG = {
@@ -140,7 +140,7 @@ def find_gods(bazi):
     result = []
 
     for g in ALL_GODS:
-        # 第一层：集合规则
+        # 第一层：集合规则 如果有规则rules，并且命中
         if g.get("rules") and match_rules(bazi, g["rules"]):
             result.append({
                 "name": g["name"],
@@ -149,11 +149,7 @@ def find_gods(bazi):
 
         # 第二层：映射规则（羊刃 / 禄）
         if g.get("type") == "mapping":
-            if match_mapping_rule(
-                bazi,
-                g["stem_key"],
-                g["map"]
-            ):
+            if match_mapping_rule(bazi,g["stem_key"],g["map"]):
                 result.append({
                     "name": g["name"],
                     "intro": g.get("intro", "")
@@ -165,11 +161,16 @@ def find_gods(bazi):
 def match_rule_group(bazi: dict, rule: dict) -> bool:
     """单组 AND 规则"""
     for key, allowed in rule.items():
-        key_ = bazi.get(key)     
+        key_ = bazi.get(key)     # 通过key = 'month_branch' 取到bazi对象里键=month_branch对应的值
         if key_ not in allowed:
             return False
     return True
 
+    """相当于这个写法
+    for item in rule.items():
+        key = item[0]      # 取元组的第一个元素 month_branch
+        allowed = item[1]  # 取元组的第二个元素 {"寅","卯","辰"}
+    """
 
 def match_rules(bazi: dict, rules: list) -> bool:
     """多组 OR 规则"""
