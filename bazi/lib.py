@@ -101,7 +101,7 @@ YI_MA = {
     "name": "驿马",
     "type": "mapping",
     "map": YI_MA_MAP,
-    "stem_key": "day_branch",  # 也可换成 year_branch
+    "stem_key": ["day_branch", "year_branch"],
     "intro": "以年支或日支，命局见其驿马者为驿马"
 }
 # 文昌
@@ -113,7 +113,7 @@ WEN_CHANG = {
     "intro": "以日干为主，命局见其文昌支者为文昌"
 }
 
-def match_mapping_rule(bazi: dict, stem_key: str, branch_map: dict) -> bool:
+def match_mapping_rule222(bazi: dict, stem_key: str, branch_map: dict) -> bool:
     """
     通用映射型规则：
     以某干为主，判断其对应地支是否出现在命局
@@ -135,6 +135,37 @@ def match_mapping_rule(bazi: dict, stem_key: str, branch_map: dict) -> bool:
     # 最后看是否匹配
     return target_branch in branches
 
+def match_mapping_rule(bazi: dict, stem_key, branch_map: dict) -> bool:
+    """
+    通用映射型规则：
+    stem_key 可以是字符串或列表
+    """
+    # 统一转成列表
+    if isinstance(stem_key, str):
+        stem_keys = [stem_key]
+    else:
+        stem_keys = stem_key
+
+    for key in stem_keys:
+        main = bazi.get(key)
+        if not main:
+            continue
+
+        target_branch = branch_map.get(main)
+        if not target_branch:
+            continue
+
+        branches = {
+            bazi.get("year_branch"),
+            bazi.get("month_branch"),
+            bazi.get("day_branch"),
+            bazi.get("hour_branch"),
+        }
+
+        if target_branch in branches:
+            return True
+
+    return False
 
 
 
