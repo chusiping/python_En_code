@@ -132,8 +132,8 @@ def match_mapping_rule(bazi: dict, stem_key: str, branch_map: dict) -> bool:
 
 
 
-# 神煞  四废日 魁罡 羊刃 福禄
-ALL_GODS = [SI_FEI_RI, KUI_GANG,YANG_REN,LU]
+# 神煞  四废日 魁罡 羊刃 福禄 驿马
+ALL_GODS = [SI_FEI_RI, KUI_GANG,YANG_REN,LU,YI_MA]
 
 # 取神煞
 def find_gods(bazi):
@@ -231,16 +231,15 @@ def bazi_to_string_simple(bazi_dict):
     return f"{bazi_dict['year']},{bazi_dict['month']},{bazi_dict['day']},{bazi_dict['hour']}"
 
 if __name__ == "__main__":
-    bazi1 = convert_bazi("一一,一午,癸亥,一一") #四废日 羊刃
-    bazi2 = convert_bazi("一一,一一,庚戌,一一") #魁罡
-    bazi3 = convert_bazi("一一,一一,甲一,一卯")
-    bazi4 = convert_bazi("戊午,壬子,甲子,戊寅")
-    bazi5 = convert_bazi("戊午,癸丑,甲子,辛亥")
 
     bazi_Arr = [
-        bazi1,bazi2,bazi3,bazi4,bazi5
+        convert_bazi("一一,一午,癸亥,一一"), # 四废日 羊刃
+        convert_bazi("一一,一一,庚戌,一一"), # 魁罡
+        convert_bazi("一一,一一,甲一,一卯"), # 羊刃
+        convert_bazi("一一,一一,甲一,一寅"), # 福禄
+        convert_bazi("一申,一寅,一一,一一"), # 驿马
+        convert_bazi("一一,一寅,一子,一一"), # 驿马
     ]
-    # for i, g in enumerate(bazi_Arr, start=1):  
     for i, _bazi in enumerate(bazi_Arr, start=1):
         gods = find_gods(_bazi)
         for g in gods:
