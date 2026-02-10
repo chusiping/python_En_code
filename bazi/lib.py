@@ -25,6 +25,37 @@ LU_MAP = {
     "癸": "子",
 }
 
+# 驿马
+YI_MA_MAP = {
+    "申": "寅",
+    "子": "寅",
+    "辰": "寅",
+
+    "寅": "申",
+    "午": "申",
+    "戌": "申",
+
+    "巳": "亥",
+    "酉": "亥",
+    "丑": "亥",
+
+    "亥": "巳",
+    "卯": "巳",
+    "未": "巳",
+}
+#文昌
+WEN_CHANG_MAP = {
+    "甲": "巳",
+    "乙": "午",
+    "丙": "申",
+    "丁": "酉",
+    "戊": "申",
+    "己": "酉",
+    "庚": "亥",
+    "辛": "子",
+    "壬": "寅",
+    "癸": "卯",
+}
 
 # 四废日
 SI_FEI_RI = {
@@ -41,7 +72,7 @@ KUI_GANG = {
     "rules": [{"day": {"庚辰", "庚戌", "壬辰", "壬戌"}}],
     "intro": "日柱为庚辰、庚戌、壬辰、壬戌者，为魁罡日"
 }
-
+# 羊刃
 YANG_REN = {
     "name": "羊刃",
     "type": "mapping",
@@ -50,6 +81,7 @@ YANG_REN = {
     "intro": "以日干为主，命局见其刃支者为羊刃"
 }
 
+# 福禄
 LU = {
     "name": "禄",
     "type": "mapping",
@@ -58,6 +90,22 @@ LU = {
     "intro": "以日干为主，命局见其禄支者为有禄"
 }
 
+# 驿马
+YI_MA = {
+    "name": "驿马",
+    "type": "mapping",
+    "map": YI_MA_MAP,
+    "stem_key": "day_branch",  # 也可换成 year_branch
+    "intro": "以日支为主，命局见其驿马者为驿马"
+}
+# 文昌
+WEN_CHANG = {
+    "name": "文昌",
+    "type": "mapping",
+    "map": WEN_CHANG_MAP,
+    "stem_key": "day_stem",
+    "intro": "以日干为主，命局见其文昌支者为文昌"
+}
 
 def match_mapping_rule(bazi: dict, stem_key: str, branch_map: dict) -> bool:
     """
@@ -173,19 +221,28 @@ def convert_bazi(bazi_str):
     
     return bazi
 
-
+def bazi_to_string_simple(bazi_dict):
+    required_keys = ["year", "month", "day", "hour"]
+    
+    for key in required_keys:
+        if key not in bazi_dict:
+            raise KeyError(f"八字字典缺少必要的键: {key}")
+    
+    return f"{bazi_dict['year']},{bazi_dict['month']},{bazi_dict['day']},{bazi_dict['hour']}"
 
 if __name__ == "__main__":
-    bazi1 = convert_bazi("戊午,戊午,癸亥,戊寅")
-    bazi2 = convert_bazi("戊午,壬寅,庚戌,己巳")
-    bazi3 = convert_bazi("戊午,壬子,甲子,辛卯")
+    bazi1 = convert_bazi("一一,一午,癸亥,一一") #四废日 羊刃
+    bazi2 = convert_bazi("一一,一一,庚戌,一一") #魁罡
+    bazi3 = convert_bazi("一一,一一,甲一,一卯")
     bazi4 = convert_bazi("戊午,壬子,甲子,戊寅")
+    bazi5 = convert_bazi("戊午,癸丑,甲子,辛亥")
 
     bazi_Arr = [
-        bazi1,bazi2,bazi3,bazi4
+        bazi1,bazi2,bazi3,bazi4,bazi5
     ]
     # for i, g in enumerate(bazi_Arr, start=1):  
     for i, _bazi in enumerate(bazi_Arr, start=1):
         gods = find_gods(_bazi)
         for g in gods:
-            print(f"八字{i}.　　{g['name']}：{g['intro']}")
+            bazistr=bazi_to_string_simple(_bazi)
+            print(f"八字{i}({bazistr}).　　{g['name']}：{g['intro']}")
