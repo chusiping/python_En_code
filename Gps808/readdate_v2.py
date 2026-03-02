@@ -7,7 +7,7 @@ def read_and_process_excel(file_path):
         df = pd.read_excel(file_path, header=3)
         
         # 重命名列
-        df.columns = ['序号', '时间', '经纬度', '速度', '行驶方向', '状态']
+        df.columns = ['序号', '时间', '经纬度', '速度', '行驶方向', '状态','里程']
         
         # 转换时间列
         df['时间'] = pd.to_datetime(df['时间'])
@@ -65,7 +65,7 @@ def max_time_diff_in_first_n(df, n=10):
 # 主程序
 if __name__ == "__main__":
     # 读取数据
-    file_path = '车充轨迹.xlsx'
+    file_path = '测试里程.xlsx'
     miao,data = read_and_process_excel(file_path)
 
     print(f"差秒：{miao}")
