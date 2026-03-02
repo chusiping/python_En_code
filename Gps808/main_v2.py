@@ -7,6 +7,7 @@ import random
 import argparse
 import os
 import re
+import get_LastMileage
 
 
 
@@ -165,13 +166,13 @@ def main():
         try:
             # 提取数据
             terminal_phone = _terminal_phone  
-            latitude = float(excel_data[i][6])       # 纬度
-            longitude = float(excel_data[i][7])      # 经度
+            latitude = float(excel_data[i][7])       # 纬度 多了里程列，加1
+            longitude = float(excel_data[i][8])      # 经度 多了里程列，加1
             _speed = int(excel_data[i][3])           # 速度 km/h
             speed = testdate.random_adjust(_speed,3)
             direction = extract_number_from_brackets(excel_data[i][4])       # 方向
             altitude = random.randint(_altitude_A, _altitude_B)                    # 随机取海拔
-            mileage = 0
+            mileage = float(excel_data[i][6])       # 多了里程列，读取
             msg_sn = 0
             alarm=0
             status=3             #0未开启未定位    1 ACC开启 + 未定位  acc开启是3
@@ -188,9 +189,13 @@ def main():
             GPS_lat.append(new_lat)
             GPS_long.append(new_lon)
 
-            if '里程：' in excel_data[i][5]:
-                mileage_part = excel_data[i][5].split(';')[0].split('：')[1].split('km')[0]
-                mileage = int(float(mileage_part)*10)
+            # 从sqlite的db里取上次总里程数
+            db_mileage = get_LastMileage.get_last_mileage(terminal_phone)
+            mileage = db_mileage + mileage
+
+            # if '里程：' in excel_data[i][5]:
+            #     mileage_part = excel_data[i][5].split(';')[0].split('：')[1].split('km')[0]
+            #     mileage = int(float(mileage_part)*10)
             if '制动信号' in excel_data[i][5]:
                 brake_on = True
             if 'ACC关闭' in excel_data[i][5]:
