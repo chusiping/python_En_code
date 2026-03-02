@@ -159,6 +159,9 @@ def main():
 
     GPS_lat = []
     GPS_long = []
+    # 从sqlite的db里取上次总里程数
+    get_LastMileage.init_db()
+    db_mileage = get_LastMileage.get_last_mileage(_terminal_phone)
     for i in range(0, min(process_count, total_rows)):  # 从第1行开始，跳过表头(改了)
         # print(f"\n{'='*50}")
         # print(f"\n  处理第 {i} 条记录:")
@@ -189,9 +192,7 @@ def main():
             GPS_lat.append(new_lat)
             GPS_long.append(new_lon)
 
-            # 从sqlite的db里取上次总里程数
-            db_mileage = get_LastMileage.get_last_mileage(terminal_phone)
-            mileage = db_mileage + mileage
+            mileage = int(round((db_mileage + mileage) * 10))
 
             # if '里程：' in excel_data[i][5]:
             #     mileage_part = excel_data[i][5].split(';')[0].split('：')[1].split('km')[0]
@@ -220,7 +221,7 @@ def main():
             # print(f"    时间: {testdate.replace_date_to_today()}")
             # print(f"    制动: {brake_on}")
             print(f"\n[发送到服务器]")
-            print(f"     发送 {_terminal_phone} 第{i+1}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on} acc:{status}  等待{_miao}秒")
+            print(f"     发送 {_terminal_phone} 第{i+1}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on} acc:{status} 里程:{mileage / 10:.1f}  等待{_miao}秒")
             # print(f"    纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon}")
 
             packet,raw = temp.build_0200(
@@ -271,6 +272,7 @@ def main():
             # 添加延时，避免发送过快
             if i < min(process_count, total_rows) - 1:  # 不是最后一条
                 # print(f"\n等待{_miao}秒...")
+                _miao = 3  # 测试用，测完注释掉
                 time.sleep(_miao)
                 
         except ValueError as e:
@@ -285,76 +287,15 @@ def main():
     
     # 3. 询问是否处理剩余数据
     remaining = max(0, total_rows - process_count)
-    # if remaining > 0:
-        # print(f"\n{'='*60}")
-        # print(f"\n[3]  还有 {remaining} 条记录未处理")
-        
-        # if SEND_TO_SERVER:
-        #     choice = input(f"是否批量处理剩余数据？(y/n): ").lower()
-        #     if choice == 'y':
-        #         print(f"\n[3] 批量处理剩余数据...")
-        #         print(f"将发送到: {SERVER_IP}:{SERVER_PORT}")
-                
-        #         batch_size = 10  # 每批处理数量
-        #         total_batches = (remaining + batch_size - 1) // batch_size
-                
-        #         for batch in range(total_batches):
-        #             start_idx = 4 + batch * batch_size
-        #             end_idx = min(4 + (batch + 1) * batch_size, total_rows)
-                    
-        #             print(f"\n处理批次 {batch+1}/{total_batches} (记录 {start_idx} 到 {end_idx-1})")
-                    
-        #             for i in range(start_idx, end_idx):
-        #                 try:
-        #                     # 简化的数据提取
-        #                     plate = str(excel_data[i][0])
-        #                     lat = float(excel_data[i][5])
-        #                     lon = float(excel_data[i][4])
-        #                     spd = int(excel_data[i][3])
-        #                     dir_val = int(excel_data[i][6])
-                            
-        #                     packet = change808.build_808_gps_message(plate, lat, lon, spd, dir_val, 0)
-                            
-        #                     if packet:
-        #                         success, _ = send_808_packet_tcp(packet, SERVER_IP, SERVER_PORT)
-        #                         if success:
-        #                             success_count += 1
-        #                             print(f"  ✓ 记录{i}发送成功")
-        #                         else:
-        #                             fail_count += 1
-        #                             print(f"  ✗ 记录{i}发送失败")
-        #                     else:
-        #                         fail_count += 1
-                                
-        #                     # 每条记录间隔0.5秒
-        #                     time.sleep(0.5)
-                            
-        #                 except Exception as e:
-        #                     fail_count += 1
-        #                     print(f"  ✗ 记录{i}处理失败: {e}")
-                    
-        #             # 每批之间间隔2秒
-        #             if batch < total_batches - 1:
-        #                 print(f"批次间隔2秒...")
-        #                 time.sleep(2)
-    
-
     print(f"\n[4] 统计结果 => 总记录数:{total_rows},还有{remaining}条记录未处理,成功处理: {success_count}  失败处理: {fail_count}")
-    # 4. 显示统计结果
-    # print(f"\n{'='*60}")
-    # print("处理完成!")
-    # print(f"{'='*60}")
-    # print(f"统计结果:")
-    # print(f"  总记录数: {total_rows - 1}")
-    # print(f"  成功处理: {success_count}")
-    # print(f"  失败处理: {fail_count}")
-    
-    # if total_rows - 1 > 0:
-    #     success_rate = success_count / (total_rows - 1) * 100
-    #     print(f"  成功率: {success_rate:.1f}%")
-    
+
     if SEND_TO_SERVER:
         print(f"\n[4]  服务器: {SERVER_IP}:{SERVER_PORT} (TCP)  所有数据包已尝试发送")
+        new_mileage = round(mileage / 10, 1)
+        get_LastMileage.update_mileage(_terminal_phone,new_mileage)
+        ck = get_LastMileage.get_last_mileage(_terminal_phone)
+        print(f"\n[5]  回写里程完毕,原里程{db_mileage},最新里程{ck}")
+        
 
 if __name__ == "__main__":
     main()
@@ -362,3 +303,4 @@ if __name__ == "__main__":
 
 # 2025-12-15 15:19 测试总结确认 (1)状态取值3 (2)经纬度方向上传正确    
 # 2025-12-18 15:19 刹车状态在扩展字段，后续增加判断刹车，微调速度和经纬度
+# 2026-3-2 17:42   增加里程的取值，从sqlite的db库里取上次里程数，发送完毕，写会db
