@@ -245,8 +245,19 @@ def validate_task_config(row, index):
 
 
 if __name__ == "__main__":
-    # 测试：从Excel生成配置
-    excel_path = "config.xlsx"
+    # 从命令行参数获取配置文件路径
+    if len(sys.argv) < 2:
+        print("用法: python excel_to_config.py <配置文件路径>")
+        print()
+        print("config目录下可用的配置文件:")
+        config_dir = "config"
+        if os.path.exists(config_dir):
+            for f in os.listdir(config_dir):
+                if f.endswith(".xlsx"):
+                    print(f"  - {config_dir}/{f}")
+        sys.exit(1)
+    
+    excel_path = sys.argv[1]
     
     # # 进行验证
     try:
