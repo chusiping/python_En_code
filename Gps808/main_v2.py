@@ -104,7 +104,7 @@ def main():
     _miao = 2
 
     #B方式测试： 使用外部参数传入使用 ==================================================
-    # 范例：python main_v2.py --excel "车充轨迹.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
+    # 范例：python main_v2.py --excel "excle/科韵路停车场_截断数据.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
     parser = argparse.ArgumentParser(description='JT808数据发送')
     parser.add_argument('--excel', required=True, help='Excel文件路径')
     parser.add_argument('--phone', required=True, help='终端号码')
