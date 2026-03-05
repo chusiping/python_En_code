@@ -10,6 +10,9 @@
 
     逻辑：读取配置到数组，每隔5秒对比数组里的时间。
           系统时间晚于配置里指定的时间，任务加入线程数组。    
+3. 本地测试
+    python main_v2.py --excel "excle/科韵路停车场_截断数据.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
+
 
 测试转正式需要调整的：
     1. 间隔秒数 _miao = miao
