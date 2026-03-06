@@ -106,7 +106,7 @@ def config_edit():
 @app.route('/xlsx')
 @login_required
 def xlsx_files():
-    return render_template('xlsx.html')
+    return render_template('uploadxlsx.html')
 
 @app.route('/admin')
 @login_required
