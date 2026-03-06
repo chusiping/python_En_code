@@ -21,6 +21,11 @@ def get_excel_files():
         return []
     return [f for f in os.listdir(CONFIG_DIR) if f.endswith(('.xlsx', '.xls'))]
 
+def get_json_files():
+    if not os.path.exists(CONFIG_DIR):
+        return []
+    return [f for f in os.listdir(CONFIG_DIR) if f.endswith('.json')]
+
 def convert_value(val):
     if val is None:
         return ''
@@ -49,6 +54,12 @@ def save_workbook(wb, filename=None):
 @login_required
 def list_files():
     files = get_excel_files()
+    return jsonify(files)
+
+@config_bp.route('/jsonfiles', methods=['GET'])
+@login_required
+def list_json_files():
+    files = get_json_files()
     return jsonify(files)
 
 @config_bp.route('/data', methods=['GET'])

@@ -44,16 +44,15 @@
     <script>
         async function loadFiles() {
             try {
-                const res = await fetch('/api/config/files');
+                const res = await fetch('/api/config/jsonfiles');
                 const files = await res.json();
-                const jsonFiles = files.filter(f => f.endsWith('.json'));
                 const select = document.getElementById('fileSelect');
                 select.innerHTML = '';
-                if (jsonFiles.length === 0) {
+                if (files.length === 0) {
                     select.innerHTML = '<option value="">暂无JSON文件</option>';
                     return;
                 }
-                jsonFiles.forEach(f => {
+                files.forEach(f => {
                     const opt = document.createElement('option');
                     opt.value = f;
                     opt.textContent = f;
