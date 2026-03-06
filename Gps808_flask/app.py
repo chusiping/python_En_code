@@ -90,11 +90,16 @@ def logout():
 @app.route('/api/check-admin', methods=['GET'])
 @login_required
 def check_admin():
-    return jsonify({'isAdmin': session.get('username') == 'admin'})
+    return jsonify({'isAdmin': session.get('username') == 'admin', 'username': session.get('username')})
 
 @app.route('/')
 @login_required
 def index():
+    return render_template('index.html')
+
+@app.route('/config')
+@login_required
+def config_edit():
     return render_template('config_edit.html')
 
 @app.route('/xlsx')
