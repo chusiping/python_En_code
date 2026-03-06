@@ -2,14 +2,20 @@
     excel_to_config.py 读取排班表 config.xlsx 生成 task.json 
     异常判断：配置里的excle文件实际不存在目录下，或名称错误，则cmd里提示，防止出异常
     2026-3-5 16:25
-        config.xlsx 放到config文件夹
-        excel_to_config.py 指定 config.文件生成
+        1.config.xlsx 放到config文件夹
+        2.指定 config.文件生成
+            py excel_to_config.py config/config.xlsx 
+        3.增加页面操作 http://localhost:5000/exportjson
+
 2. task.py      排班改成绝对日期，不进行循环
     task.py 读取 config/tasks.json ，等待配置的时间到了，进行多任务发送
     python task.py --send
-
     逻辑：读取配置到数组，每隔5秒对比数组里的时间。
-          系统时间晚于配置里指定的时间，任务加入线程数组。    
+          系统时间晚于配置里指定的时间，任务加入线程数组。
+
+    2026-3-6 17:59 
+        1. 改为动态参数读取json
+            python task.py --config config/config.json --no-send
 3. 本地测试
     python main_v2.py --excel "excle/科韵路停车场_截断数据.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
 

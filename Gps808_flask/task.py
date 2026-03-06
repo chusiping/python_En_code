@@ -19,12 +19,33 @@ except Exception:
 parser = argparse.ArgumentParser(description='Windows 稳定型子进程调度器（无线程）')
 parser.add_argument('--send', dest='is_SEND', action='store_true', help='真实发送数据')
 parser.add_argument('--no-send', dest='is_SEND', action='store_false', help='测试模式不实际发送')
+parser.add_argument('--config', dest='config_file', type=str, help='JSON配置文件路径')
 parser.set_defaults(is_SEND=False)
 args = parser.parse_args()
+
+# 如果没有指定配置文件，提示用户选择
+if args.config_file is None:
+    print("请指定JSON配置文件路径")
+    config_dir = "config"
+    if os.path.exists(config_dir):
+        print(f"\n{config_dir} 目录下可用的JSON文件:")
+        for f in os.listdir(config_dir):
+            if f.endswith(".json"):
+                print(f"  - {config_dir}/{f}")
+    else:
+        print(f"目录 {config_dir} 不存在")
+    exit(1)
+
+TASK_FILE = args.config_file
+
+# 验证文件是否存在
+if not os.path.exists(TASK_FILE):
+    print(f"错误: 配置文件不存在 - {TASK_FILE}")
+    exit(1)
+
 SEND_TO_SERVER = args.is_SEND
 
 # ==================== 配置 ====================
-TASK_FILE = 'config/tasks.json'
 LOG_DIR = 'logs'
 CHECK_INTERVAL = 5  # 秒
 MAX_CONCURRENT_PROCESSES = 50
