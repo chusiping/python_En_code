@@ -8,12 +8,14 @@ from functools import wraps
 from api.config_edit import config_bp
 from api.uploadxlsx import upload_bp
 from api.exportjson import export_bp
+from api.runtask import runtask_bp
 
 app = Flask(__name__)
 app.secret_key = 'excel_editor_secret_key_2024'
 app.register_blueprint(config_bp, url_prefix='/api/config')
 app.register_blueprint(upload_bp, url_prefix='/api')
 app.register_blueprint(export_bp, url_prefix='/api')
+app.register_blueprint(runtask_bp, url_prefix='/api')
 EXCEL_FILE = 'config/config.xlsx'
 USERS_DB = 'config/user.db'
 
@@ -114,6 +116,11 @@ def xlsx_files():
 @login_required
 def exportjson_page():
     return render_template('exportjson.html')
+
+@app.route('/runtask')
+@login_required
+def runtask_page():
+    return render_template('runtask.html')
 
 @app.route('/admin')
 @login_required
