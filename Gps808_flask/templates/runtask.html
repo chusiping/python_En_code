@@ -19,6 +19,7 @@
         button:disabled { background: #ccc; cursor: not-allowed; }
         button.back { background: #2196F3; }
         button.back:hover { background: #1976D2; }
+        .cmd-display { background: #333; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; margin-bottom: 15px; }
         .output { background: #1e1e1e; color: #fff; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 13px; min-height: 400px; max-height: 70vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
     </style>
 </head>
@@ -38,6 +39,7 @@
             <button id="runBtn" onclick="runTask()">执行任务</button>
             <button class="back" onclick="location.href='/'">返回首页</button>
         </div>
+        <div class="cmd-display" id="cmdDisplay"></div>
         <div class="output" id="output">请选择配置文件并点击"执行任务"按钮</div>
     </div>
 
@@ -78,6 +80,7 @@
             const mode = sendCheck ? '--send' : '--no-send';
             const cmd = `python task.py --config config/${file} ${mode}`;
 
+            document.getElementById('cmdDisplay').innerHTML = '执行命令: ' + cmd;
             const output = document.getElementById('output');
             const btn = document.getElementById('runBtn');
             btn.disabled = true;
