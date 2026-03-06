@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>xlsx文件管理</title>
+    <title>excle文件管理</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
@@ -25,9 +25,9 @@
     </style>
 </head>
 <body>
-    <h1>xlsx 文件管理</h1>
+    <h1>excle 文件管理</h1>
     <div class="toolbar">
-        <button onclick="location.href='/'">← 返回表格编辑</button>
+        <button onclick="location.href='/'">← 返回首页</button>
         <button onclick="loadFiles()">刷新</button>
         <button class="delete" onclick="deleteSelected()">删除选中</button>
         <button onclick="document.getElementById('uploadSection').style.display = document.getElementById('uploadSection').style.display === 'none' ? 'block' : 'none'">📤 批量上传</button>
@@ -35,7 +35,7 @@
     </div>
     <div id="uploadSection" style="display:none; max-width: 95%; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; text-align: center;">
         <input type="file" id="fileInput" multiple accept=".xlsx,.xls" style="margin-bottom: 10px;">
-        <button onclick="uploadFiles()">上传到xlsx目录</button>
+        <button onclick="uploadFiles()">开始上传</button>
         <div id="uploadResult" style="margin-top: 10px; color: #666;"></div>
     </div>
     <div class="file-container">

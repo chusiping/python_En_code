@@ -11,7 +11,8 @@ app = Flask(__name__)
 app.secret_key = 'excel_editor_secret_key_2024'
 app.register_blueprint(config_bp, url_prefix='/api/config')
 EXCEL_FILE = 'config/config.xlsx'
-UPLOAD_FOLDER = 'xlsx'
+UPLOAD_FOLDER = 'excle'
+TEMP_FOLDER = 'temp'
 USERS_DB = 'config/user.db'
 
 def get_db_connection():
@@ -195,11 +196,19 @@ def delete_xlsx_file():
     if not filename:
         return jsonify({'success': False, 'message': '文件名不能为空'})
     
-    filepath = os.path.join(UPLOAD_FOLDER, filename)
-    if os.path.exists(filepath):
-        os.remove(filepath)
-        return jsonify({'success': True})
-    return jsonify({'success': False, 'message': '文件不存在'})
+    src_filepath = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(src_filepath):
+        return jsonify({'success': False, 'message': '文件不存在'})
+    
+    if not os.path.exists(TEMP_FOLDER):
+        os.makedirs(TEMP_FOLDER)
+    
+    dest_filepath = os.path.join(TEMP_FOLDER, filename)
+    if os.path.exists(dest_filepath):
+        return jsonify({'success': False, 'message': 'temp目录已存在同名文件'})
+    
+    os.rename(src_filepath, dest_filepath)
+    return jsonify({'success': True})
 
 @app.route('/api/xlsx/delete-batch', methods=['POST'])
 @login_required
@@ -207,10 +216,14 @@ def delete_xlsx_files_batch():
     filenames = request.json.get('filenames', [])
     deleted = []
     for filename in filenames:
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        if os.path.exists(filepath):
-            os.remove(filepath)
-            deleted.append(filename)
+        src_filepath = os.path.join(UPLOAD_FOLDER, filename)
+        if os.path.exists(src_filepath):
+            if not os.path.exists(TEMP_FOLDER):
+                os.makedirs(TEMP_FOLDER)
+            dest_filepath = os.path.join(TEMP_FOLDER, filename)
+            if not os.path.exists(dest_filepath):
+                os.rename(src_filepath, dest_filepath)
+                deleted.append(filename)
     return jsonify({'success': True, 'deleted': deleted})
 
 @app.route('/api/upload', methods=['POST'])
