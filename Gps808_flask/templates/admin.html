@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { text-align: center; color: #333; }
+        .toolbar { margin-bottom: 10px; text-align: center; }
+        button { padding: 6px 12px; margin: 0 3px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-size: 13px; }
+        button:hover { background: #45a049; }
+        button.delete { background: #f44336; }
+        button.delete:hover { background: #da190b; }
+        button.edit { background: #2196F3; }
+        button.edit:hover { background: #1976D2; }
+        .user-container { max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 20px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+        th { background: #2196F3; color: white; }
+        td:first-child { text-align: center; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 30px; border-radius: 8px; width: 300px; }
+        .modal h2 { margin-top: 0; color: #333; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; color: #666; }
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
+        .modal-buttons { text-align: right; }
+        .modal-buttons button { margin-left: 5px; }
+    </style>
+</head>
+<body>
+    <h1>用户管理</h1>
+    <div class="toolbar">
+        <button onclick="location.href='/'">← 返回表格编辑</button>
+        <button onclick="loadUsers()">刷新</button>
+        <button onclick="showAddModal()">+ 添加用户</button>
+        <button onclick="logout()" style="background:#666">退出登录</button>
+    </div>
+    <div class="user-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>用户名</th>
+                    <th>密码</th>
+                    <th style="width:150px">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <h2 id="modalTitle">添加用户</h2>
+            <div class="form-group">
+                <label>用户名</label>
+                <input type="text" id="modalUsername">
+            </div>
+            <div class="form-group">
+                <label>密码</label>
+                <input type="password" id="modalPassword">
+            </div>
+            <div class="modal-buttons">
+                <button onclick="closeModal()" style="background:#999">取消</button>
+                <button onclick="saveUser()">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isEdit = false;
+        let originalUsername = '';
+
+        async function loadUsers() {
+            const res = await fetch('/api/admin/users');
+            const users = await res.json();
+            const tbody = document.getElementById('tbody');
+            
+            if (users.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="empty">暂无用户</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = users.map(u => `
+                <tr>
+                    <td>${u.username}</td>
+                    <td>${u.password}</td>
+                    <td>
+                        <button class="edit" onclick="editUser('${u.username}', '${u.password}')">编辑</button>
+                        ${u.username !== 'admin' ? `<button class="delete" onclick="deleteUser('${u.username}')">删除</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        function showAddModal() {
+            isEdit = false;
+            originalUsername = '';
+            document.getElementById('modalTitle').textContent = '添加用户';
+            document.getElementById('modalUsername').value = '';
+            document.getElementById('modalPassword').value = '';
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function editUser(username, password) {
+            isEdit = true;
+            originalUsername = username;
+            document.getElementById('modalTitle').textContent = '编辑用户';
+            document.getElementById('modalUsername').value = username;
+            document.getElementById('modalPassword').value = password;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        async function saveUser() {
+            const username = document.getElementById('modalUsername').value.trim();
+            const password = document.getElementById('modalPassword').value.trim();
+
+            if (!username || !password) {
+                alert('用户名和密码不能为空');
+                return;
+            }
+
+            let res;
+            if (isEdit) {
+                res = await fetch('/api/admin/user', {
+                    method: 'PUT',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password})
+                });
+            } else {
+                res = await fetch('/api/admin/user', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username, password})
+                });
+            }
+
+            const result = await res.json();
+            if (result.success) {
+                closeModal();
+                loadUsers();
+            } else {
+                alert(result.message);
+            }
+        }
+
+        async function deleteUser(username) {
+            if (!confirm(`确定要删除用户 "${username}" 吗？`)) return;
+
+            const res = await fetch('/api/admin/user', {
+                method: 'DELETE',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({username})
+            });
+            const result = await res.json();
+            if (result.success) {
+                loadUsers();
+            } else {
+                alert(result.message);
+            }
+        }
+
+        async function logout() {
+            await fetch('/api/logout', {method: 'POST'});
+            location.href = '/login';
+        }
+
+        loadUsers();
+    </script>
+</body>
+</html>

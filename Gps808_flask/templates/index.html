@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Excel表格编辑器</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { text-align: center; color: #333; }
+        .toolbar { margin-bottom: 10px; text-align: center; }
+        button { padding: 8px 16px; margin: 0 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
+        button:hover { background: #45a049; }
+        button.delete { background: #f44336; }
+        button.delete:hover { background: #da190b; }
+        .table-container { overflow-x: auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; min-width: 100px; }
+        th { background: #2196F3; color: white; position: relative; }
+        th:first-child, td:first-child { min-width: 30px; width: 30px; text-align: center; }
+        th::after { content: ''; position: absolute; right: 0; top: 0; bottom: 0; width: 4px; cursor: col-resize; background: transparent; }
+        th:hover::after { background: rgba(255,255,255,0.3); }
+        td input { width: 100%; border: none; background: transparent; font-size: 14px; padding: 4px; }
+        .resizer { position: absolute; right: 0; top: 0; bottom: 0; width: 5px; cursor: col-resize; background: transparent; z-index: 1; }
+        .resizer:hover, .resizer.resizing { background: rgba(255,255,255,0.5); }
+    </style>
+</head>
+<body>
+    <h1>Excel表格编辑器</h1>
+<div class="toolbar">
+        <button onclick="addEmptyRow()">+ 添加空行</button>
+        <button onclick="copyRow()">复制行</button>
+        <button onclick="confirmChanges()">✓ 确认修改</button>
+        <button onclick="refresh()">刷新</button>
+        <button onclick="location.href='/xlsx'">📁 管理xlsx文件</button>
+        <button onclick="location.href='/admin'" id="adminBtn" style="display:none">👤 用户管理</button>
+        <button onclick="logout()" style="background:#666">退出登录</button>
+    </div>
+    <div class="table-container">
+        <table id="table">
+            <thead id="thead"></thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+<script>
+        let currentData = [];
+        let deletedRows = [];
+        let addedRows = [];
+        let newRowId = 0;
+        let selectedRow = null;
+        let copiedRowData = null;
+
+        async function checkAdmin() {
+            const res = await fetch('/api/check-admin');
+            const data = await res.json();
+            if (data.isAdmin) {
+                document.getElementById('adminBtn').style.display = 'inline-block';
+            }
+        }
+
+        async function logout() {
+            await fetch('/api/logout', {method: 'POST'});
+            location.href = '/login';
+        }
+
+        checkAdmin();
+
+        async function loadData() {
+            const res = await fetch('/api/data');
+            currentData = await res.json();
+            deletedRows = [];
+            addedRows = [];
+            selectedRow = null;
+            copiedRowData = null;
+            renderTable();
+        }
+
+        function renderTable() {
+            const thead = document.getElementById('thead');
+            const tbody = document.getElementById('tbody');
+            
+            if (currentData.length === 0) {
+                thead.innerHTML = '';
+                tbody.innerHTML = '<tr><td>暂无数据</td></tr>';
+                return;
+            }
+
+            let headers = currentData[0] || [];
+            let rows = currentData.slice(1);
+
+            thead.innerHTML = '<tr><th style="width:30px">✓</th>' + headers.map((h, i) => 
+                `<th>${h !== null && h !== undefined ? h : ''}<div class="resizer"></div></th>`
+            ).join('') + '<th>操作</th></tr>';
+
+            let html = rows.map((row, rowIdx) => 
+                `<tr><td><input type="radio" name="rowSelect" value="${rowIdx + 2}" ${selectedRow === rowIdx + 2 ? 'checked' : ''} onchange="selectRow(${rowIdx + 2})"></td>` + 
+                row.map((cell, colIdx) => 
+                    `<td><input type="text" data-row="${rowIdx + 2}" data-col="${colIdx + 1}" value="${cell !== null && cell !== undefined ? cell : ''}"></td>`
+                ).join('') + 
+                `<td><button class="delete row-btn" onclick="markDelete(${rowIdx + 2})">待删除</button></td></tr>`
+            ).join('');
+
+            addedRows.forEach((newRow, idx) => {
+                const colCount = headers.length;
+                let inputs = '';
+                for (let i = 0; i < colCount; i++) {
+                    inputs += `<td><input type="text" data-row="new-${newRow.id}" data-col="${i + 1}" value="${newRow.data[i] || ''}"></td>`;
+                }
+                html += `<tr class="new-row"><td></td>${inputs}<td><button class="delete row-btn" onclick="cancelAddRow(${idx})">取消</button></td></tr>`;
+            });
+
+            tbody.innerHTML = html;
+        }
+
+        function selectRow(rowNum) {
+            selectedRow = rowNum;
+            copiedRowData = [...currentData[rowNum - 1]];
+        }
+
+        function copyRow() {
+            if (!selectedRow) {
+                alert('请先选择一行');
+                return;
+            }
+            newRowId++;
+            addedRows.push({id: newRowId, data: [...copiedRowData]});
+            renderTable();
+        }
+
+        async function confirmChanges() {
+            if (!confirm('确认要保存修改吗？')) {
+                return;
+            }
+            
+            const inputs = document.querySelectorAll('#tbody input[type="text"]');
+            const changes = [];
+            const newRowsData = [];
+            let currentNewRow = null;
+            let currentNewRowIdx = -1;
+            
+            inputs.forEach(input => {
+                const row = input.dataset.row;
+                const col = parseInt(input.dataset.col);
+                const value = input.value;
+                
+                if (row.startsWith('new-')) {
+                    const rowId = parseInt(row.split('-')[1]);
+                    if (currentNewRowIdx !== rowId) {
+                        if (currentNewRow) newRowsData.push({...currentNewRow});
+                        currentNewRowIdx = rowId;
+                        currentNewRow = {idx: newRowsData.length, data: {}};
+                    }
+                    currentNewRow.data[col] = value;
+                } else {
+                    const rowNum = parseInt(row);
+                    const originalRow = currentData[rowNum - 1];
+                    const originalValue = originalRow ? (originalRow[col - 1] || '') : '';
+                    if (value !== originalValue) {
+                        changes.push({row: rowNum, col, value});
+                    }
+                }
+            });
+            
+            if (currentNewRow) newRowsData.push({...currentNewRow});
+            
+            if (changes.length === 0 && deletedRows.length === 0 && newRowsData.length === 0) {
+                alert('没有修改');
+                return;
+            }
+
+            for (const row of deletedRows) {
+                await fetch(`/api/row/${row}`, {method: 'DELETE'});
+            }
+
+            if (newRowsData.length > 0) {
+                await fetch('/api/row', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({count: newRowsData.length})
+                });
+            }
+
+            const finalRowStart = currentData.length + 1;
+            newRowsData.forEach((newRow, idx) => {
+                Object.entries(newRow.data).forEach(([col, value]) => {
+                    if (value) {
+                        changes.push({row: finalRowStart + idx, col: parseInt(col), value});
+                    }
+                });
+            });
+            
+            if (changes.length > 0) {
+                await fetch('/api/cells', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({changes})
+                });
+            }
+            alert('保存成功');
+            deletedRows = [];
+            addedRows = [];
+            loadData();
+        }
+
+        function markDelete(row) {
+            if (!deletedRows.includes(row)) {
+                deletedRows.push(row);
+            }
+            const btn = event.target;
+            btn.textContent = '已标记';
+            btn.disabled = true;
+            btn.style.background = '#999';
+        }
+
+        function addEmptyRow() {
+            newRowId++;
+            addedRows.push({id: newRowId, data: []});
+            renderTable();
+        }
+
+        function cancelAddRow(idx) {
+            addedRows.splice(idx, 1);
+            renderTable();
+        }
+
+        function refresh() {
+            loadData();
+        }
+
+        function initResizer() {
+            let resizer = null;
+            let startX = 0;
+            let startWidth = 0;
+            let th = null;
+
+            document.addEventListener('mousedown', function(e) {
+                if (e.target.classList.contains('resizer')) {
+                    resizer = e.target;
+                    th = resizer.parentElement;
+                    startX = e.pageX;
+                    startWidth = th.offsetWidth;
+                    resizer.classList.add('resizing');
+                    document.body.style.cursor = 'col-resize';
+                }
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (resizer) {
+                    const diff = e.pageX - startX;
+                    th.style.width = (startWidth + diff) + 'px';
+                }
+            });
+
+            document.addEventListener('mouseup', function() {
+                if (resizer) {
+                    resizer.classList.remove('resizing');
+                    resizer = null;
+                    document.body.style.cursor = '';
+                }
+            });
+        }
+
+        loadData();
+        initResizer();
+    </script>
+</body>
+</html>

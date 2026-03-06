@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>xlsx文件管理</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        h1 { text-align: center; color: #333; }
+        .toolbar { margin-bottom: 10px; text-align: center; }
+        button { padding: 4px 10px; margin: 0 3px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; font-size: 13px; }
+        button:hover { background: #45a049; }
+        button.delete { background: #f44336; }
+        button.delete:hover { background: #da190b; }
+        button.back { background: #2196F3; }
+        button.back:hover { background: #1976D2; }
+        .file-container { max-width: 95%; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 15px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; font-size: 13px; }
+        th { background: #2196F3; color: white; }
+        td:first-child { text-align: center; }
+        .empty { text-align: center; padding: 40px; color: #999; }
+        .file-size { text-align: right; }
+    </style>
+</head>
+<body>
+    <h1>xlsx 文件管理</h1>
+    <div class="toolbar">
+        <button onclick="location.href='/'">← 返回表格编辑</button>
+        <button onclick="loadFiles()">刷新</button>
+        <button class="delete" onclick="deleteSelected()">删除选中</button>
+        <button onclick="document.getElementById('uploadSection').style.display = document.getElementById('uploadSection').style.display === 'none' ? 'block' : 'none'">📤 批量上传</button>
+        <button onclick="logout()" style="background:#666">退出登录</button>
+    </div>
+    <div id="uploadSection" style="display:none; max-width: 95%; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; text-align: center;">
+        <input type="file" id="fileInput" multiple accept=".xlsx,.xls" style="margin-bottom: 10px;">
+        <button onclick="uploadFiles()">上传到xlsx目录</button>
+        <div id="uploadResult" style="margin-top: 10px; color: #666;"></div>
+    </div>
+    <div class="file-container">
+        <table>
+            <thead>
+                <tr>
+                    <th style="width:50px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th>文件名</th>
+                    <th>大小</th>
+                    <th>修改时间</th>
+                    <th style="width:80px">操作</th>
+                </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+        </table>
+    </div>
+
+    <script>
+        async function loadFiles() {
+            const res = await fetch('/api/xlsx/list');
+            const files = await res.json();
+            const tbody = document.getElementById('tbody');
+            
+            if (files.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无文件</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = files.map(f => `
+                <tr>
+                    <td><input type="checkbox" class="file-check" value="${f.name}"></td>
+                    <td>${f.name}</td>
+                    <td class="file-size">${formatSize(f.size)}</td>
+                    <td>${f.modified}</td>
+                    <td><button class="delete" onclick="deleteFile('${f.name}')">删除</button></td>
+                </tr>
+            `).join('');
+        }
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('selectAll').checked;
+            document.querySelectorAll('.file-check').forEach(cb => cb.checked = checked);
+        }
+
+        async function deleteFile(filename) {
+            if (!confirm(`确定要删除 "${filename}" 吗？`)) return;
+            
+            const res = await fetch('/api/xlsx/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({filename})
+            });
+            const result = await res.json();
+            if (result.success) {
+                alert('删除成功');
+                loadFiles();
+            } else {
+                alert('删除失败: ' + result.message);
+            }
+        }
+
+        async function deleteSelected() {
+            const checked = document.querySelectorAll('.file-check:checked');
+            if (checked.length === 0) {
+                alert('请选择要删除的文件');
+                return;
+            }
+            
+            const filenames = Array.from(checked).map(cb => cb.value);
+            if (!confirm(`确定要删除选中的 ${filenames.length} 个文件吗？`)) return;
+
+            const res = await fetch('/api/xlsx/delete-batch', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({filenames})
+            });
+            const result = await res.json();
+            alert(`已删除 ${result.deleted.length} 个文件`);
+            loadFiles();
+        }
+
+        async function uploadFiles() {
+            const fileInput = document.getElementById('fileInput');
+            const files = fileInput.files;
+            if (files.length === 0) {
+                alert('请选择文件');
+                return;
+            }
+
+            const formData = new FormData();
+            for (let i = 0; i < files.length; i++) {
+                formData.append('files[]', files[i]);
+            }
+
+            const res = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await res.json();
+            
+            let msg = result.message;
+            if (result.skipped.length > 0) {
+                msg += '\n已跳过的文件: ' + result.skipped.join(', ');
+            }
+            document.getElementById('uploadResult').innerText = msg;
+            alert(msg);
+            loadFiles();
+        }
+
+        async function logout() {
+            await fetch('/api/logout', {method: 'POST'});
+            location.href = '/login';
+        }
+
+        loadFiles();
+    </script>
+</body>
+</html>
