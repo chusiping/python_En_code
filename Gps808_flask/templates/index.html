@@ -51,6 +51,7 @@
         }
         .nav-btn.config { background: #4CAF50; }
         .nav-btn.xlsx { background: #2196F3; }
+        .nav-btn.export { background: #9C27B0; }
         .nav-btn.admin { background: #FF9800; grid-column: span 2; }
         .nav-btn.logout { background: #666; grid-column: span 2; }
         
@@ -74,6 +75,10 @@
             <a href="/xlsx" class="nav-btn xlsx">
                 <span>📁</span>
                 <span>上传轨迹文件</span>
+            </a>
+            <a href="/exportjson" class="nav-btn export">
+                <span>📄</span>
+                <span>导出JSON</span>
             </a>
             <a href="/admin" class="nav-btn admin" id="adminBtn" style="display:none">
                 <span>👤</span>

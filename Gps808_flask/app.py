@@ -7,11 +7,13 @@ from datetime import datetime, date, time
 from functools import wraps
 from api.config_edit import config_bp
 from api.uploadxlsx import upload_bp
+from api.exportjson import export_bp
 
 app = Flask(__name__)
 app.secret_key = 'excel_editor_secret_key_2024'
 app.register_blueprint(config_bp, url_prefix='/api/config')
 app.register_blueprint(upload_bp, url_prefix='/api')
+app.register_blueprint(export_bp, url_prefix='/api')
 EXCEL_FILE = 'config/config.xlsx'
 USERS_DB = 'config/user.db'
 
@@ -107,6 +109,11 @@ def config_edit():
 @login_required
 def xlsx_files():
     return render_template('uploadxlsx.html')
+
+@app.route('/exportjson')
+@login_required
+def exportjson_page():
+    return render_template('exportjson.html')
 
 @app.route('/admin')
 @login_required
