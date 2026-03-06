@@ -1,4 +1,4 @@
-﻿1. excel_to_config.py
+1. excel_to_config.py
     excel_to_config.py 读取排班表 config.xlsx 生成 task.json 
     异常判断：配置里的excle文件实际不存在目录下，或名称错误，则cmd里提示，防止出异常
     2026-3-5 16:25
