@@ -1,0 +1,79 @@
+{
+  "version": "3.0.2",
+  "lastModified": "2026-03-02T11:19:30.696Z",
+  "folders": [],
+  "bookmarks": [
+    {
+      "id": "mldkplqnkkttbe82a9q",
+      "name": "成功读取Excel",
+      "file": "excel_to_config.py",
+      "line": 31,
+      "character": 15,
+      "lineContent": "print(f\"成功读取Excel，共 {len(df)} 行配置\")",
+      "sortOrder": 13
+    },
+    {
+      "id": "mldkqs4t631th95xmml",
+      "name": "配置验证通过，可以继续执行任务调度",
+      "file": "excel_to_config.py",
+      "line": 258,
+      "character": 24,
+      "lineContent": "print(\"\\nconfig.xlsx 配置验证通过，可以继续执行任务调度\")",
+      "sortOrder": 14
+    },
+    {
+      "id": "mldkw9zxtvjt5d3me3s",
+      "name": "验证通过\")",
+      "file": "check_config.py",
+      "line": 59,
+      "character": 13,
+      "lineContent": "print(f\"✓ 任务 '{task['name']}' 验证通过\")",
+      "sortOrder": 16
+    },
+    {
+      "id": "mldl2d21qgpqqtdjt2j",
+      "name": "个任务通过验证",
+      "file": "check_config.py",
+      "line": 75,
+      "character": 17,
+      "lineContent": "print(f\"\\n{'='*60}\")",
+      "sortOrder": 17
+    },
+    {
+      "id": "mldlart6uercs2orphp",
+      "name": "配置已生成",
+      "file": "excel_to_config.py",
+      "line": 98,
+      "character": 19,
+      "lineContent": "print(f\"\\n配置已生成: {output_file} 共 {len(tasks)} 个任务\")",
+      "sortOrder": 18
+    },
+    {
+      "id": "mldld38yp2nm7e3t5e",
+      "name": "tasks.append(task)",
+      "file": "excel_to_config.py",
+      "line": 79,
+      "character": 16,
+      "lineContent": "tasks.append(task)",
+      "sortOrder": 19
+    },
+    {
+      "id": "mm8zv2wnlij5j7voqc",
+      "name": "里程",
+      "file": "main_v2.py",
+      "line": 191,
+      "character": 19,
+      "lineContent": "GPS_long.append(new_lon)",
+      "sortOrder": 20
+    },
+    {
+      "id": "mm8zvmn3vsgx3sw9ju",
+      "name": "写回里程",
+      "file": "main_v2.py",
+      "line": 291,
+      "character": 12,
+      "lineContent": "if SEND_TO_SERVER:",
+      "sortOrder": 21
+    }
+  ]
+}
