@@ -6,13 +6,13 @@ import sqlite3
 from datetime import datetime, date, time
 from functools import wraps
 from api.config_edit import config_bp
+from api.uploadxlsx import upload_bp
 
 app = Flask(__name__)
 app.secret_key = 'excel_editor_secret_key_2024'
 app.register_blueprint(config_bp, url_prefix='/api/config')
+app.register_blueprint(upload_bp, url_prefix='/api')
 EXCEL_FILE = 'config/config.xlsx'
-UPLOAD_FOLDER = 'excle'
-TEMP_FOLDER = 'temp'
 USERS_DB = 'config/user.db'
 
 def get_db_connection():
@@ -171,94 +171,5 @@ def delete_user():
         return jsonify({'success': True})
     return jsonify({'success': False, 'message': '用户不存在'})
 
-@app.route('/api/xlsx/list', methods=['GET'])
-@login_required
-def list_xlsx_files():
-    if not os.path.exists(UPLOAD_FOLDER):
-        return jsonify([])
-    
-    files = []
-    for f in os.listdir(UPLOAD_FOLDER):
-        if f.endswith(('.xlsx', '.xls')):
-            filepath = os.path.join(UPLOAD_FOLDER, f)
-            stat = os.stat(filepath)
-            files.append({
-                'name': f,
-                'size': stat.st_size,
-                'modified': datetime.fromtimestamp(stat.st_mtime).strftime('%Y-%m-%d %H:%M:%S')
-            })
-    return jsonify(files)
-
-@app.route('/api/xlsx/delete', methods=['POST'])
-@login_required
-def delete_xlsx_file():
-    filename = request.json.get('filename')
-    if not filename:
-        return jsonify({'success': False, 'message': '文件名不能为空'})
-    
-    src_filepath = os.path.join(UPLOAD_FOLDER, filename)
-    if not os.path.exists(src_filepath):
-        return jsonify({'success': False, 'message': '文件不存在'})
-    
-    if not os.path.exists(TEMP_FOLDER):
-        os.makedirs(TEMP_FOLDER)
-    
-    dest_filepath = os.path.join(TEMP_FOLDER, filename)
-    if os.path.exists(dest_filepath):
-        return jsonify({'success': False, 'message': 'temp目录已存在同名文件'})
-    
-    os.rename(src_filepath, dest_filepath)
-    return jsonify({'success': True})
-
-@app.route('/api/xlsx/delete-batch', methods=['POST'])
-@login_required
-def delete_xlsx_files_batch():
-    filenames = request.json.get('filenames', [])
-    deleted = []
-    for filename in filenames:
-        src_filepath = os.path.join(UPLOAD_FOLDER, filename)
-        if os.path.exists(src_filepath):
-            if not os.path.exists(TEMP_FOLDER):
-                os.makedirs(TEMP_FOLDER)
-            dest_filepath = os.path.join(TEMP_FOLDER, filename)
-            if not os.path.exists(dest_filepath):
-                os.rename(src_filepath, dest_filepath)
-                deleted.append(filename)
-    return jsonify({'success': True, 'deleted': deleted})
-
-@app.route('/api/upload', methods=['POST'])
-@login_required
-def upload_files():
-    if 'files[]' not in request.files:
-        return jsonify({'success': False, 'message': '没有选择文件'})
-    
-    files = request.files.getlist('files[]')
-    uploaded = []
-    skipped = []
-    
-    for file in files:
-        if file.filename == '':
-            continue
-        if not file.filename.endswith(('.xlsx', '.xls')):
-            continue
-        
-        filename = file.filename if file.filename.endswith('.xlsx') else file.filename + 'x'
-        filepath = os.path.join(UPLOAD_FOLDER, filename)
-        
-        if os.path.exists(filepath):
-            skipped.append(filename)
-        else:
-            file.save(filepath)
-            uploaded.append(filename)
-    
-    return jsonify({
-        'success': True,
-        'uploaded': uploaded,
-        'skipped': skipped,
-        'message': f'上传成功: {len(uploaded)}个, 跳过: {len(skipped)}个'
-    })
-
 if __name__ == '__main__':
-    if not os.path.exists(UPLOAD_FOLDER):
-        os.makedirs(UPLOAD_FOLDER)
     app.run(debug=True, port=5000)
