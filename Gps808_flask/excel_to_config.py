@@ -25,6 +25,12 @@ def excel_to_config(excel_path, output_dir="config"):
     base_name = os.path.splitext(os.path.basename(excel_path))[0]
     output_file = os.path.join(output_dir, f"{base_name}.json")
     
+    # 检查是否已存在同名JSON文件
+    if os.path.exists(output_file):
+        print(f"\n错误: JSON文件已存在 - {output_file}")
+        print("请先删除已存在的文件，或使用不同的Excel文件名")
+        return None
+    
     # 读取Excel
     try:
         df = pd.read_excel(excel_path)
