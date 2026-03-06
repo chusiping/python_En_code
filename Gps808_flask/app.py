@@ -2,27 +2,45 @@ from flask import Flask, render_template, request, jsonify, session, redirect
 import openpyxl
 import os
 import json
+import sqlite3
 from datetime import datetime, date, time
 from functools import wraps
 
 app = Flask(__name__)
 app.secret_key = 'excel_editor_secret_key_2024'
-EXCEL_FILE = 'config.xlsx'
+EXCEL_FILE = 'config/config.xlsx'
 UPLOAD_FOLDER = 'xlsx'
-USERS_FILE = 'users.json'
+USERS_DB = 'config/user.db'
+
+def get_db_connection():
+    conn = sqlite3.connect(USERS_DB)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+def init_db():
+    conn = get_db_connection()
+    conn.execute('CREATE TABLE IF NOT EXISTS users (username TEXT PRIMARY KEY, password TEXT)')
+    cur = conn.execute('SELECT COUNT(*) FROM users')
+    if cur.fetchone()[0] == 0:
+        conn.execute("INSERT INTO users (username, password) VALUES ('admin', 'admin123')")
+        conn.commit()
+    conn.close()
+
+init_db()
 
 def load_users():
-    if not os.path.exists(USERS_FILE):
-        users = {'admin': 'admin123'}
-        with open(USERS_FILE, 'w', encoding='utf-8') as f:
-            json.dump(users, f, ensure_ascii=False)
-        return users
-    with open(USERS_FILE, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    conn = get_db_connection()
+    users = {row['username']: row['password'] for row in conn.execute('SELECT username, password FROM users')}
+    conn.close()
+    return users
 
 def save_users(users):
-    with open(USERS_FILE, 'w', encoding='utf-8') as f:
-        json.dump(users, f, ensure_ascii=False)
+    conn = get_db_connection()
+    conn.execute('DELETE FROM users')
+    for username, password in users.items():
+        conn.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, password))
+    conn.commit()
+    conn.close()
 
 def login_required(f):
     @wraps(f)
