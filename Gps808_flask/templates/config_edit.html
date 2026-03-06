@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Excel表格编辑器</title>
+    <title>队列任务配置管理</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
@@ -26,14 +26,18 @@
     </style>
 </head>
 <body>
-    <h1>Excel表格编辑器</h1>
+    <h1>队列任务配置管理</h1>
 <div class="toolbar">
+        <label>选择文件: 
+            <select id="fileSelect" onchange="onFileChange()">
+                <option value="">加载中...</option>
+            </select>
+        </label>
         <button onclick="addEmptyRow()">+ 添加空行</button>
         <button onclick="copyRow()">复制行</button>
         <button onclick="confirmChanges()">✓ 确认修改</button>
         <button onclick="refresh()">刷新</button>
-        <button onclick="location.href='/xlsx'">📁 管理xlsx文件</button>
-        <button onclick="location.href='/admin'" id="adminBtn" style="display:none">👤 用户管理</button>
+        <button onclick="location.href='/'">🏠 首页</button>
         <button onclick="logout()" style="background:#666">退出登录</button>
     </div>
     <div class="table-container">
@@ -50,13 +54,33 @@
         let newRowId = 0;
         let selectedRow = null;
         let copiedRowData = null;
+        let currentFile = '';
 
-        async function checkAdmin() {
-            const res = await fetch('/api/check-admin');
-            const data = await res.json();
-            if (data.isAdmin) {
-                document.getElementById('adminBtn').style.display = 'inline-block';
+        async function loadFiles() {
+            const res = await fetch('/api/config/files');
+            const files = await res.json();
+            const select = document.getElementById('fileSelect');
+            select.innerHTML = '';
+            if (files.length === 0) {
+                select.innerHTML = '<option value="">暂无文件</option>';
+                return;
             }
+            files.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                select.appendChild(opt);
+            });
+            if (files.length > 0) {
+                select.value = files[0];
+                currentFile = files[0];
+                loadData();
+            }
+        }
+
+        function onFileChange() {
+            currentFile = document.getElementById('fileSelect').value;
+            loadData();
         }
 
         async function logout() {
@@ -64,10 +88,11 @@
             location.href = '/login';
         }
 
-        checkAdmin();
+        loadFiles();
 
         async function loadData() {
-            const res = await fetch('/api/config/data');
+            const url = '/api/config/data?file=' + encodeURIComponent(currentFile);
+            const res = await fetch(url);
             currentData = await res.json();
             deletedRows = [];
             addedRows = [];
@@ -170,14 +195,14 @@
             }
 
             for (const row of deletedRows) {
-                await fetch(`/api/config/row/${row}`, {method: 'DELETE'});
+                await fetch(`/api/config/row/${row}?file=${encodeURIComponent(currentFile)}`, {method: 'DELETE'});
             }
 
             if (newRowsData.length > 0) {
                 await fetch('/api/config/row', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({count: newRowsData.length})
+                    body: JSON.stringify({count: newRowsData.length, file: currentFile})
                 });
             }
 
@@ -194,7 +219,7 @@
                 await fetch('/api/config/cells', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({changes})
+                    body: JSON.stringify({changes, file: currentFile})
                 });
             }
             alert('保存成功');

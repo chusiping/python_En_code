@@ -5,7 +5,7 @@ from datetime import datetime, date, time
 
 config_bp = Blueprint('config', __name__)
 
-EXCEL_FILE = 'config/config.xlsx'
+CONFIG_DIR = 'config'
 
 def login_required(f):
     from functools import wraps
@@ -16,6 +16,11 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
+def get_excel_files():
+    if not os.path.exists(CONFIG_DIR):
+        return []
+    return [f for f in os.listdir(CONFIG_DIR) if f.endswith(('.xlsx', '.xls'))]
+
 def convert_value(val):
     if val is None:
         return ''
@@ -23,21 +28,34 @@ def convert_value(val):
         return val.isoformat()
     return val
 
-def get_workbook():
-    if not os.path.exists(EXCEL_FILE):
+def get_workbook(filename=None):
+    if filename is None:
+        filename = 'config.xlsx'
+    filepath = os.path.join(CONFIG_DIR, filename)
+    if not os.path.exists(filepath):
         wb = openpyxl.Workbook()
         wb.remove(wb.active)
         wb.create_sheet('Sheet1')
-        wb.save(EXCEL_FILE)
-    return openpyxl.load_workbook(EXCEL_FILE)
+        wb.save(filepath)
+    return openpyxl.load_workbook(filepath)
 
-def save_workbook(wb):
-    wb.save(EXCEL_FILE)
+def save_workbook(wb, filename=None):
+    if filename is None:
+        filename = 'config.xlsx'
+    filepath = os.path.join(CONFIG_DIR, filename)
+    wb.save(filepath)
+
+@config_bp.route('/files', methods=['GET'])
+@login_required
+def list_files():
+    files = get_excel_files()
+    return jsonify(files)
 
 @config_bp.route('/data', methods=['GET'])
 @login_required
 def get_data():
-    wb = get_workbook()
+    filename = request.args.get('file', 'config.xlsx')
+    wb = get_workbook(filename)
     ws = wb.active
     data = []
     for row in ws.iter_rows(values_only=True):
@@ -52,20 +70,22 @@ def get_data():
 @config_bp.route('/cell', methods=['POST'])
 @login_required
 def update_cell():
-    wb = get_workbook()
+    filename = request.json.get('file', 'config.xlsx')
+    wb = get_workbook(filename)
     ws = wb.active
     row = int(request.json['row'])
     col = int(request.json['col'])
     value = request.json['value']
     ws.cell(row, col, value)
-    save_workbook(wb)
+    save_workbook(wb, filename)
     wb.close()
     return jsonify({'success': True})
 
 @config_bp.route('/cells', methods=['POST'])
 @login_required
 def update_cells():
-    wb = get_workbook()
+    filename = request.json.get('file', 'config.xlsx')
+    wb = get_workbook(filename)
     ws = wb.active
     changes = request.json['changes']
     for item in changes:
@@ -73,28 +93,30 @@ def update_cells():
         col = int(item['col'])
         value = item['value']
         ws.cell(row, col, value)
-    save_workbook(wb)
+    save_workbook(wb, filename)
     wb.close()
     return jsonify({'success': True})
 
 @config_bp.route('/row', methods=['POST'])
 @login_required
 def add_row():
-    wb = get_workbook()
+    filename = request.json.get('file', 'config.xlsx')
+    wb = get_workbook(filename)
     ws = wb.active
     count = int(request.json.get('count', 1))
     for _ in range(count):
         ws.append([''] * ws.max_column)
-    save_workbook(wb)
+    save_workbook(wb, filename)
     wb.close()
     return jsonify({'success': True})
 
 @config_bp.route('/row/<int:row_idx>', methods=['DELETE'])
 @login_required
 def delete_row(row_idx):
-    wb = get_workbook()
+    filename = request.args.get('file', 'config.xlsx')
+    wb = get_workbook(filename)
     ws = wb.active
     ws.delete_rows(row_idx)
-    save_workbook(wb)
+    save_workbook(wb, filename)
     wb.close()
     return jsonify({'success': True})
