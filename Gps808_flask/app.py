@@ -5,9 +5,11 @@ import json
 import sqlite3
 from datetime import datetime, date, time
 from functools import wraps
+from api.config_edit import config_bp
 
 app = Flask(__name__)
 app.secret_key = 'excel_editor_secret_key_2024'
+app.register_blueprint(config_bp, url_prefix='/api/config')
 EXCEL_FILE = 'config/config.xlsx'
 UPLOAD_FOLDER = 'xlsx'
 USERS_DB = 'config/user.db'
@@ -59,24 +61,6 @@ def admin_required(f):
             return '<script>alert("只有管理员可以访问");location.href="/"</script>'
         return f(*args, **kwargs)
     return decorated_function
-
-def convert_value(val):
-    if val is None:
-        return ''
-    if isinstance(val, (datetime, date, time)):
-        return val.isoformat()
-    return val
-
-def get_workbook():
-    if not os.path.exists(EXCEL_FILE):
-        wb = openpyxl.Workbook()
-        wb.remove(wb.active)
-        wb.create_sheet('Sheet1')
-        wb.save(EXCEL_FILE)
-    return openpyxl.load_workbook(EXCEL_FILE)
-
-def save_workbook(wb):
-    wb.save(EXCEL_FILE)
 
 @app.route('/login')
 def login_page():
@@ -180,71 +164,6 @@ def delete_user():
         save_users(users)
         return jsonify({'success': True})
     return jsonify({'success': False, 'message': '用户不存在'})
-
-@app.route('/api/data', methods=['GET'])
-@login_required
-def get_data():
-    wb = get_workbook()
-    ws = wb.active
-    data = []
-    for row in ws.iter_rows(values_only=True):
-        row_data = [convert_value(cell) for cell in row]
-        if any(cell != '' for cell in row_data):
-            data.append(row_data)
-    wb.close()
-    response = jsonify(data)
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    return response
-
-@app.route('/api/cell', methods=['POST'])
-@login_required
-def update_cell():
-    wb = get_workbook()
-    ws = wb.active
-    row = int(request.json['row'])
-    col = int(request.json['col'])
-    value = request.json['value']
-    ws.cell(row, col, value)
-    save_workbook(wb)
-    wb.close()
-    return jsonify({'success': True})
-
-@app.route('/api/cells', methods=['POST'])
-@login_required
-def update_cells():
-    wb = get_workbook()
-    ws = wb.active
-    changes = request.json['changes']
-    for item in changes:
-        row = int(item['row'])
-        col = int(item['col'])
-        value = item['value']
-        ws.cell(row, col, value)
-    save_workbook(wb)
-    wb.close()
-    return jsonify({'success': True})
-
-@app.route('/api/row', methods=['POST'])
-@login_required
-def add_row():
-    wb = get_workbook()
-    ws = wb.active
-    count = int(request.json.get('count', 1))
-    for _ in range(count):
-        ws.append([''] * ws.max_column)
-    save_workbook(wb)
-    wb.close()
-    return jsonify({'success': True})
-
-@app.route('/api/row/<int:row_idx>', methods=['DELETE'])
-@login_required
-def delete_row(row_idx):
-    wb = get_workbook()
-    ws = wb.active
-    ws.delete_rows(row_idx)
-    save_workbook(wb)
-    wb.close()
-    return jsonify({'success': True})
 
 @app.route('/api/xlsx/list', methods=['GET'])
 @login_required

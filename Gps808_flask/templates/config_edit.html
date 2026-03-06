@@ -67,7 +67,7 @@
         checkAdmin();
 
         async function loadData() {
-            const res = await fetch('/api/data');
+            const res = await fetch('/api/config/data');
             currentData = await res.json();
             deletedRows = [];
             addedRows = [];
@@ -170,11 +170,11 @@
             }
 
             for (const row of deletedRows) {
-                await fetch(`/api/row/${row}`, {method: 'DELETE'});
+                await fetch(`/api/config/row/${row}`, {method: 'DELETE'});
             }
 
             if (newRowsData.length > 0) {
-                await fetch('/api/row', {
+                await fetch('/api/config/row', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({count: newRowsData.length})
@@ -191,7 +191,7 @@
             });
             
             if (changes.length > 0) {
-                await fetch('/api/cells', {
+                await fetch('/api/config/cells', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({changes})
