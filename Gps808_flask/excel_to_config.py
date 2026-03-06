@@ -21,6 +21,10 @@ def excel_to_config(excel_path, output_dir="config"):
     """
     将Excel配置转换为JSON配置文件
     """
+    # 根据输入文件名生成输出文件名
+    base_name = os.path.splitext(os.path.basename(excel_path))[0]
+    output_file = os.path.join(output_dir, f"{base_name}.json")
+    
     # 读取Excel
     try:
         df = pd.read_excel(excel_path)
@@ -92,34 +96,11 @@ def excel_to_config(excel_path, output_dir="config"):
     }
     
     # 保存JSON文件
-    output_file = os.path.join(output_dir, "tasks.json")
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(config, f, ensure_ascii=False, indent=2)
     
     print(f"\n配置已生成: {output_file} 共 {len(tasks)} 个任务")
     return config
-
-def load_config(config_path="config/tasks.json"):
-    """
-    加载JSON配置文件
-    """
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            config = json.load(f)
-        
-        print(f"加载配置: {config_path}")
-        print(f"版本: {config.get('version', '未知')}")
-        print(f"生成时间: {config.get('generated_at', '未知')}")
-        print(f"任务数量: {len(config.get('tasks', []))}")
-        
-        return config
-    
-    except FileNotFoundError:
-        print(f"配置文件不存在: {config_path}")
-        return None
-    except json.JSONDecodeError as e:
-        print(f"配置文件格式错误: {e}")
-        return None
 
 def validate_task_config(row, index):
     """
