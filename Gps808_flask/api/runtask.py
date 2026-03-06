@@ -30,9 +30,11 @@ def run_task():
         return jsonify({'success': False, 'message': '配置文件不存在'})
     
     mode = '--send' if send else '--no-send'
-    cmd = f'chcp 65001 >nul && python task.py --config {filepath} {mode}'
+    cmd = f'python task.py --config {filepath} {mode}'
     
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = os.environ.copy()
+    env['PYTHONIOENCODING'] = 'utf-8'
     
     def generate():
         try:
@@ -43,7 +45,8 @@ def run_task():
                 encoding='utf-8',
                 errors='replace',
                 cwd=project_root,
-                shell=True
+                shell=True,
+                env=env
             )
             
             for line in iter(process.stdout.readline, ''):
