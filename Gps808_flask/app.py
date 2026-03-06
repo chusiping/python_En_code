@@ -111,7 +111,7 @@ def check_admin():
 @app.route('/')
 @login_required
 def index():
-    return render_template('index.html')
+    return render_template('config_edit.html')
 
 @app.route('/xlsx')
 @login_required
