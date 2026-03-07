@@ -9,12 +9,21 @@
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
         h1 { text-align: center; color: #333; }
         .container { width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab { padding: 12px 24px; cursor: pointer; background: #f5f5f5; border: 1px solid #ddd; border-bottom: none; margin-right: 5px; border-radius: 4px 4px 0 0; }
+        .tab.active { background: #4CAF50; color: white; border-color: #4CAF50; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
         .toolbar { margin-bottom: 20px; text-align: center; }
         label { margin-right: 10px; }
         select { padding: 8px; font-size: 14px; border-radius: 4px; border: 1px solid #ddd; }
         button { padding: 8px 16px; margin: 0 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
         button:hover { background: #45a049; }
         button:disabled { background: #ccc; cursor: not-allowed; }
+        button.refresh { background: #FF9800; }
+        button.refresh:hover { background: #F57C00; }
         .output { background: #1e1e1e; color: #fff; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 13px; min-height: 400px; max-height: 70vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
         .output .info { color: #4fc3f7; }
         .output .error { color: #f44336; }
@@ -26,19 +35,51 @@
 <body>
     <h1>导出 JSON 配置</h1>
     <div class="container">
-        <div class="toolbar">
-            <label>选择文件:
-                <select id="fileSelect">
-                    <option value="">加载中...</option>
-                </select>
-            </label>
-            <button id="exportBtn" onclick="exportJson()">导出 JSON</button>
-            <button class="back" onclick="location.href='/'">返回首页</button>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('export')">导出JSON</div>
+            <div class="tab" onclick="switchTab('view')">查看JSON</div>
         </div>
-        <div class="output" id="output">请选择文件并点击"导出JSON"按钮</div>
+        
+        <div id="tab-export" class="tab-content active">
+            <div class="toolbar">
+                <label>选择文件:
+                    <select id="fileSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                </label>
+                <button id="exportBtn" onclick="exportJson()">导出 JSON</button>
+                <button class="back" onclick="location.href='/'">返回首页</button>
+            </div>
+            <div class="output" id="output">请选择文件并点击"导出JSON"按钮</div>
+        </div>
+        
+        <div id="tab-view" class="tab-content">
+            <div class="toolbar">
+                <label>选择JSON文件:
+                    <select id="jsonFileSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                </label>
+                <button class="refresh" onclick="loadJsonFiles()">刷新</button>
+            </div>
+            <div class="output" id="jsonOutput">请选择JSON文件查看内容</div>
+        </div>
     </div>
 
     <script>
+        let jsonRefreshInterval = null;
+        let currentJsonFile = null;
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (tabName === 'view') {
+                loadJsonFiles();
+            }
+        }
+        
         async function loadFiles() {
             const res = await fetch('/api/config/files');
             const files = await res.json();
@@ -54,6 +95,46 @@
                 opt.textContent = f;
                 select.appendChild(opt);
             });
+        }
+
+        async function loadJsonFiles() {
+            const res = await fetch('/api/config/jsonfiles');
+            const files = await res.json();
+            const select = document.getElementById('jsonFileSelect');
+            select.innerHTML = '';
+            if (files.length === 0) {
+                select.innerHTML = '<option value="">暂无JSON文件</option>';
+                return;
+            }
+            files.forEach(f => {
+                const opt = document.createElement('option');
+                opt.value = f;
+                opt.textContent = f;
+                select.appendChild(opt);
+            });
+            
+            select.onchange = function() {
+                if (this.value) {
+                    loadJsonContent(this.value);
+                }
+            };
+        }
+
+        async function loadJsonContent(filename) {
+            currentJsonFile = filename;
+            const output = document.getElementById('jsonOutput');
+            output.innerHTML = '加载中...';
+            try {
+                const res = await fetch('/api/config/json/' + encodeURIComponent(filename));
+                const data = await res.json();
+                if (data.success) {
+                    output.textContent = data.content || '(空文件)';
+                } else {
+                    output.textContent = '加载失败: ' + data.message;
+                }
+            } catch (e) {
+                output.textContent = '加载失败: ' + e.message;
+            }
         }
 
         async function exportJson() {

@@ -62,6 +62,19 @@ def list_json_files():
     files = get_json_files()
     return jsonify(files)
 
+@config_bp.route('/json/<filename>', methods=['GET'])
+@login_required
+def get_json_content(filename):
+    filepath = os.path.join(CONFIG_DIR, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'success': False, 'message': '文件不存在'})
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return jsonify({'success': True, 'content': content})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+
 @config_bp.route('/data', methods=['GET'])
 @login_required
 def get_data():
