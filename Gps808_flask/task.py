@@ -50,21 +50,7 @@ LOG_DIR = 'logs'
 CHECK_INTERVAL = 5  # 秒
 MAX_CONCURRENT_PROCESSES = 50
 
-# 创建日志文件名（包含日期）
-LOG_FILENAME = f"logs/run_{datetime.now().strftime('%Y_%m_%d_%H%M%S')}.log"
-
-# 配置日志
-logging.basicConfig(
-    level=logging.INFO,
-    format='[%(asctime)s] %(message)s',
-    datefmt='%Y-%m-%d %H:%M:%S',
-    handlers=[
-        logging.FileHandler(LOG_FILENAME, encoding='utf-8'),
-        logging.StreamHandler()  # 同时输出到控制台（可选）
-    ]
-)
-
-# ==================== 任务加载 ====================
+# ==================== 参数解析 ====================
 def load_tasks(now=None):
     """
     加载任务，只保留未来将要执行的任务（schedule_time > now）
@@ -103,7 +89,8 @@ def start_process(task):
 
     task_name = task['name']
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    log_path = os.path.join(LOG_DIR, f"{task_name}_{timestamp}.log")
+    parent_pid = os.getpid()
+    log_path = os.path.join(LOG_DIR, f"{task_name}_{timestamp}_pid{parent_pid}.log")
 
     cmd = [
         'python', '-u', 'main_v2.py',
@@ -187,6 +174,20 @@ def scheduler_loop(tasks):
 
 # ==================== main ====================
 def main():
+    os.makedirs(LOG_DIR, exist_ok=True)
+    current_pid = os.getpid()
+    LOG_FILENAME = f"logs/run_{datetime.now().strftime('%Y_%m_%d_%H%M%S')}_pid{current_pid}.log"
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format='[%(asctime)s] %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+        handlers=[
+            logging.FileHandler(LOG_FILENAME, encoding='utf-8'),
+            logging.StreamHandler()
+        ]
+    )
+
     now = datetime.now()
     tasks = load_tasks(now=now)
     if not tasks:
