@@ -9,6 +9,13 @@
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
         h1 { text-align: center; color: #333; }
         .container { width: 98%; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab { padding: 12px 24px; cursor: pointer; background: #f5f5f5; border: 1px solid #ddd; border-bottom: none; margin-right: 5px; border-radius: 4px 4px 0 0; }
+        .tab.active { background: #4CAF50; color: white; border-color: #4CAF50; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
         .toolbar { margin-bottom: 20px; text-align: center; }
         label { margin-right: 10px; }
         select { padding: 8px; font-size: 14px; border-radius: 4px; border: 1px solid #ddd; }
@@ -23,6 +30,9 @@
         button.back:hover { background: #1976D2; }
         button.refresh { background: #FF9800; }
         button.refresh:hover { background: #F57C00; }
+        button.view-log { background: #9C27B0; }
+        button.view-log:hover { background: #7B1FA2; }
+        
         .task-header { display: flex; justify-content: space-between; align-items: center; background: #333; color: #fff; padding: 8px 12px; border-radius: 4px 4px 0 0; font-size: 13px; }
         .task-header .cmd { color: #0f0; font-family: monospace; }
         .task-box { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
@@ -39,42 +49,81 @@
         .process-controls { margin-top: 15px; display: flex; gap: 10px; align-items: center; }
         .process-controls input { padding: 8px; width: 120px; border: 1px solid #ddd; border-radius: 4px; }
         .no-processes { padding: 20px; text-align: center; color: #999; }
+        
+        .log-viewer { padding: 15px; background: #f5f5f5; border-radius: 8px; }
+        .log-controls { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        .log-content { background: #1e1e1e; color: #0f0; padding: 15px; font-family: monospace; font-size: 13px; min-height: 300px; max-height: 60vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; border-radius: 4px; }
+        .log-loading { text-align: center; color: #666; padding: 20px; }
     </style>
 </head>
 <body>
     <h1>执行任务</h1>
     <div class="container">
-        <div class="toolbar">
-            <label>选择配置文件:
-                <select id="fileSelect">
-                    <option value="">加载中...</option>
-                </select>
-            </label>
-            <label class="checkbox-wrapper">
-                <input type="checkbox" id="sendCheck">
-                正式发送
-            </label>
-            <button id="runBtn" onclick="runTask()">执行任务</button>
-            <button class="back" onclick="location.href='/'">返回首页</button>
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('runtask')">执行任务</div>
+            <div class="tab" onclick="switchTab('logs')">查看日志</div>
         </div>
-        <div id="tasksContainer"></div>
         
-        <div class="process-monitor">
-            <h2>运行中的进程 (task.py)</h2>
-            <div class="process-list" id="processList">
-                <div class="no-processes">暂无运行中的任务</div>
+        <div id="tab-runtask" class="tab-content active">
+            <div class="toolbar">
+                <label>选择配置文件:
+                    <select id="fileSelect">
+                        <option value="">加载中...</option>
+                    </select>
+                </label>
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="sendCheck">
+                    正式发送
+                </label>
+                <button id="runBtn" onclick="runTask()">执行任务</button>
+                <button class="back" onclick="location.href='/'">返回首页</button>
             </div>
-            <div class="process-controls">
-                <input type="text" id="killPid" placeholder="输入PID">
-                <button class="stop" onclick="killByPid()">Kill进程</button>
-                <button class="refresh" onclick="loadProcesses()">刷新</button>
-                <span style="color: #666; font-size: 12px;">(每10秒自动刷新)</span>
+            <div id="tasksContainer"></div>
+            
+            <div class="process-monitor">
+                <h2>运行中的进程 (task.py)</h2>
+                <div class="process-list" id="processList">
+                    <div class="no-processes">暂无运行中的任务</div>
+                </div>
+                <div class="process-controls">
+                    <input type="text" id="killPid" placeholder="输入PID">
+                    <button class="stop" onclick="killByPid()">Kill进程</button>
+                    <button class="refresh" onclick="loadProcesses()">刷新</button>
+                    <span style="color: #666; font-size: 12px;">(每10秒自动刷新)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tab-logs" class="tab-content">
+            <div class="log-viewer">
+                <div class="log-controls">
+                    <label>选择日志文件:
+                        <select id="logFileSelect">
+                            <option value="">加载中...</option>
+                        </select>
+                    </label>
+                    <button class="view-log" onclick="loadLogContent()">查看日志</button>
+                    <button class="refresh" onclick="loadLogFiles()">刷新列表</button>
+                </div>
+                <div class="log-content" id="logContent">
+                    <div class="log-loading">请选择日志文件查看内容</div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
         let tasks = [];
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
+            document.getElementById('tab-' + tabName).classList.add('active');
+            if (tabName === 'logs') {
+                loadLogFiles();
+            }
+        }
         
         function extractTaskId(firstChunk) {
             const match = firstChunk.match(/\[TASK_ID:([^\]]+)\]/);
@@ -107,6 +156,48 @@
             }
         }
 
+        async function loadLogFiles() {
+            try {
+                const res = await fetch('/api/runtask/logs');
+                const files = await res.json();
+                const select = document.getElementById('logFileSelect');
+                select.innerHTML = '';
+                if (files.length === 0) {
+                    select.innerHTML = '<option value="">暂无日志文件</option>';
+                    return;
+                }
+                files.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f;
+                    opt.textContent = f;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                alert('加载日志列表失败: ' + e.message);
+            }
+        }
+
+        async function loadLogContent() {
+            const filename = document.getElementById('logFileSelect').value;
+            if (!filename) {
+                alert('请选择日志文件');
+                return;
+            }
+            const container = document.getElementById('logContent');
+            container.innerHTML = '<div class="log-loading">加载中...</div>';
+            try {
+                const res = await fetch('/api/runtask/logs/' + encodeURIComponent(filename));
+                const data = await res.json();
+                if (data.success) {
+                    container.textContent = data.content || '(空文件)';
+                } else {
+                    container.textContent = '加载失败: ' + data.message;
+                }
+            } catch (e) {
+                container.textContent = '加载失败: ' + e.message;
+            }
+        }
+        
         async function loadProcesses() {
             try {
                 const res = await fetch('/api/runtask/processes');

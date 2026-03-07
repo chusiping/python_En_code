@@ -150,3 +150,25 @@ def kill_by_pid():
         return jsonify({'success': True, 'message': f'进程 {pid} 已终止'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+@runtask_bp.route('/runtask/logs', methods=['GET'])
+@login_required
+def get_log_files():
+    log_dir = 'logs'
+    if not os.path.exists(log_dir):
+        return jsonify([])
+    files = sorted([f for f in os.listdir(log_dir) if f.endswith('.log')], reverse=True)
+    return jsonify(files)
+
+@runtask_bp.route('/runtask/logs/<filename>', methods=['GET'])
+@login_required
+def get_log_content(filename):
+    log_path = os.path.join('logs', filename)
+    if not os.path.exists(log_path):
+        return jsonify({'success': False, 'message': '文件不存在'})
+    try:
+        with open(log_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        return jsonify({'success': True, 'content': content})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
