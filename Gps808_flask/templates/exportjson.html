@@ -61,6 +61,7 @@
                     </select>
                 </label>
                 <button class="refresh" onclick="loadJsonFiles()">刷新</button>
+                <button onclick="confirmLoadJson()">确定</button>
             </div>
             <div class="output" id="jsonOutput">请选择JSON文件查看内容</div>
         </div>
@@ -112,12 +113,15 @@
                 opt.textContent = f;
                 select.appendChild(opt);
             });
-            
-            select.onchange = function() {
-                if (this.value) {
-                    loadJsonContent(this.value);
-                }
-            };
+        }
+
+        function confirmLoadJson() {
+            const select = document.getElementById('jsonFileSelect');
+            if (select.value) {
+                loadJsonContent(select.value);
+            } else {
+                alert('请先选择JSON文件');
+            }
         }
 
         async function loadJsonContent(filename) {
