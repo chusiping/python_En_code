@@ -30,6 +30,8 @@
         .output .success { color: #4CAF50; }
         button.back { background: #2196F3; }
         button.back:hover { background: #1976D2; }
+        button.delete { background: #f44336; }
+        button.delete:hover { background: #d32f2f; }
     </style>
 </head>
 <body>
@@ -62,6 +64,7 @@
                 </label>
                 <button class="refresh" onclick="loadJsonFiles()">刷新</button>
                 <button onclick="confirmLoadJson()">确定</button>
+                <button id="deleteJsonBtn" class="delete" style="display:none" onclick="deleteJsonFile()">删除</button>
             </div>
             <div class="output" id="jsonOutput">请选择JSON文件查看内容</div>
         </div>
@@ -70,6 +73,42 @@
     <script>
         let jsonRefreshInterval = null;
         let currentJsonFile = null;
+        let isAdmin = false;
+        
+        async function checkAdmin() {
+            const res = await fetch('/api/check-admin');
+            const data = await res.json();
+            isAdmin = data.isAdmin;
+            if (isAdmin) {
+                document.getElementById('deleteJsonBtn').style.display = 'inline-block';
+            }
+        }
+        
+        async function deleteJsonFile() {
+            const select = document.getElementById('jsonFileSelect');
+            if (!select.value) {
+                alert('请先选择JSON文件');
+                return;
+            }
+            if (!confirm('确定要将文件 "' + select.value + '" 移动到 temp 文件夹吗？')) {
+                return;
+            }
+            try {
+                const res = await fetch('/api/json/' + encodeURIComponent(select.value), {
+                    method: 'DELETE'
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    loadJsonFiles();
+                    document.getElementById('jsonOutput').textContent = '请选择JSON文件查看内容';
+                } else {
+                    alert('删除失败: ' + data.message);
+                }
+            } catch (e) {
+                alert('删除失败: ' + e.message);
+            }
+        }
         
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -179,6 +218,7 @@
         }
 
         loadFiles();
+        checkAdmin();
     </script>
 </body>
 </html>
