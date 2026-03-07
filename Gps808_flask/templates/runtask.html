@@ -17,10 +17,15 @@
         button { padding: 8px 16px; margin: 0 5px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 4px; }
         button:hover { background: #45a049; }
         button:disabled { background: #ccc; cursor: not-allowed; }
+        button.stop { background: #f44336; }
+        button.stop:hover { background: #d32f2f; }
         button.back { background: #2196F3; }
         button.back:hover { background: #1976D2; }
-        .cmd-display { background: #333; color: #0f0; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 13px; margin-bottom: 15px; }
-        .output { background: #1e1e1e; color: #fff; padding: 15px; border-radius: 4px; font-family: monospace; font-size: 13px; min-height: 400px; max-height: 70vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+        .task-header { display: flex; justify-content: space-between; align-items: center; background: #333; color: #fff; padding: 8px 12px; border-radius: 4px 4px 0 0; font-size: 13px; }
+        .task-header .cmd { color: #0f0; font-family: monospace; }
+        .task-box { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
+        .task-output { background: #1e1e1e; color: #fff; padding: 10px; font-family: monospace; font-size: 13px; min-height: 200px; max-height: 50vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
+        .task-info { padding: 10px; background: #f9f9f9; border-top: 1px solid #ddd; text-align: center; color: #666; }
     </style>
 </head>
 <body>
@@ -39,11 +44,17 @@
             <button id="runBtn" onclick="runTask()">执行任务</button>
             <button class="back" onclick="location.href='/'">返回首页</button>
         </div>
-        <div class="cmd-display" id="cmdDisplay"></div>
-        <div class="output" id="output">请选择配置文件并点击"执行任务"按钮</div>
+        <div id="tasksContainer"></div>
     </div>
 
     <script>
+        let tasks = [];
+        
+        function extractTaskId(firstChunk) {
+            const match = firstChunk.match(/\[TASK_ID:([^\]]+)\]/);
+            return match ? match[1] : null;
+        }
+        
         async function loadFiles() {
             try {
                 const res = await fetch('/api/config/jsonfiles');
@@ -61,7 +72,7 @@
                     select.appendChild(opt);
                 });
             } catch (e) {
-                document.getElementById('output').innerHTML = '加载文件列表失败: ' + e.message;
+                alert('加载文件列表失败: ' + e.message);
             }
         }
 
@@ -80,11 +91,10 @@
             const mode = sendCheck ? '--send' : '--no-send';
             const cmd = `python task.py --config config/${file} ${mode}`;
 
-            document.getElementById('cmdDisplay').innerHTML = '执行命令: ' + cmd;
-            const output = document.getElementById('output');
-            const btn = document.getElementById('runBtn');
-            btn.disabled = true;
-            output.innerHTML = `执行命令: ${cmd}\n\n开始执行...\n`;
+            const taskId = 'task_' + Date.now();
+            const task = { id: taskId, backendId: null, cmd: cmd, running: true };
+            tasks.push(task);
+            renderTask(task);
 
             try {
                 const response = await fetch('/api/runtask', {
@@ -96,19 +106,88 @@
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let result = '';
+                let firstChunk = true;
 
                 while (true) {
                     const {done, value} = await reader.read();
                     if (done) break;
-                    result += decoder.decode(value);
-                    output.innerHTML = result;
-                    output.scrollTop = output.scrollHeight;
+                    const chunk = decoder.decode(value);
+                    
+                    if (firstChunk) {
+                        const backendId = extractTaskId(chunk);
+                        if (backendId) {
+                            task.backendId = backendId;
+                            result = chunk.replace(/\[TASK_ID:[^\]]+\]\n/, '');
+                        } else {
+                            result = chunk;
+                        }
+                        firstChunk = false;
+                    } else {
+                        result += chunk;
+                    }
+                    
+                    updateOutput(taskId, result);
+                }
+                
+                task.running = false;
+                updateTaskHeader(taskId, false);
+            } catch (e) {
+                updateOutput(taskId, '\n执行出错: ' + e.message);
+                task.running = false;
+                updateTaskHeader(taskId, false);
+            }
+        }
+
+        async function stopTask(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task || !task.backendId) {
+                alert('任务ID无效');
+                return;
+            }
+            try {
+                const res = await fetch(`/api/runtask/stop/${task.backendId}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    updateOutput(taskId, '\n\n[任务已停止]');
+                    task.running = false;
+                    updateTaskHeader(taskId, false);
+                } else {
+                    alert(data.message);
                 }
             } catch (e) {
-                output.innerHTML += '\n执行出错: ' + e.message;
+                alert('停止失败: ' + e.message);
             }
+        }
 
-            btn.disabled = false;
+        function renderTask(task) {
+            const container = document.getElementById('tasksContainer');
+            const div = document.createElement('div');
+            div.className = 'task-box';
+            div.id = task.id;
+            div.innerHTML = `
+                <div class="task-header" id="${task.id}_header">
+                    <span>执行命令: <span class="cmd">${task.cmd}</span></span>
+                    <button class="stop" onclick="stopTask('${task.id}')" id="${task.id}_btn">停止</button>
+                </div>
+                <div class="task-output" id="${task.id}_output">开始执行...</div>
+            `;
+            container.appendChild(div);
+        }
+
+        function updateOutput(taskId, text) {
+            const el = document.getElementById(taskId + '_output');
+            if (el) {
+                el.innerHTML = text;
+                el.scrollTop = el.scrollHeight;
+            }
+        }
+
+        function updateTaskHeader(taskId, running) {
+            const btn = document.getElementById(taskId + '_btn');
+            if (btn) {
+                btn.disabled = !running;
+                btn.textContent = running ? '停止' : '已停止';
+            }
         }
 
         loadFiles();
