@@ -106,7 +106,7 @@
                     </label>
                     <button class="view-log" onclick="loadLogContent()">查看日志</button>
                     <button class="refresh" onclick="loadLogFiles()">刷新列表</button>
-                    <button class="delete" onclick="deleteLogFile()">删除</button>
+                    <button class="delete" id="deleteBtn" onclick="deleteLogFile()" style="display:none">删除</button>
                 </div>
                 <div class="log-content" id="logContent">
                     <div class="log-loading">请选择日志文件查看内容</div>
@@ -117,6 +117,8 @@
 
     <script>
         let tasks = [];
+        let currentLogFile = null;
+        let logRefreshInterval = null;
         
         function switchTab(tabName) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -125,6 +127,8 @@
             document.getElementById('tab-' + tabName).classList.add('active');
             if (tabName === 'logs') {
                 loadLogFiles();
+            } else {
+                stopLogRefresh();
             }
         }
         
@@ -424,7 +428,20 @@
 
         loadFiles();
         loadProcesses();
+        checkAdmin();
         setInterval(loadProcesses, 10000);
+        
+        async function checkAdmin() {
+            try {
+                const res = await fetch('/api/check-admin');
+                const data = await res.json();
+                if (data.isAdmin) {
+                    document.getElementById('deleteBtn').style.display = 'inline-block';
+                }
+            } catch (e) {
+                console.error('检查管理员失败:', e);
+            }
+        }
     </script>
 </body>
 </html>
