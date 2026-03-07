@@ -54,6 +54,8 @@
         .log-controls { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
         .log-controls button.delete { background: #f44336; }
         .log-controls button.delete:hover { background: #d32f2f; }
+        .log-controls .auto-refresh { display: flex; align-items: center; gap: 5px; margin-left: 10px; }
+        .log-controls .auto-refresh input { width: 16px; height: 16px; }
         .log-content { background: #1e1e1e; color: #0f0; padding: 15px; font-family: monospace; font-size: 13px; min-height: 300px; max-height: 60vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; border-radius: 4px; }
         .log-loading { text-align: center; color: #666; padding: 20px; }
     </style>
@@ -107,6 +109,10 @@
                     <button class="view-log" onclick="loadLogContent()">查看日志</button>
                     <button class="refresh" onclick="loadLogFiles()">刷新列表</button>
                     <button class="delete" id="deleteBtn" onclick="deleteLogFile()" style="display:none">删除</button>
+                    <label class="auto-refresh">
+                        <input type="checkbox" id="autoRefreshCheck" onchange="toggleAutoRefresh()">
+                        自动刷新(3s)
+                    </label>
                 </div>
                 <div class="log-content" id="logContent">
                     <div class="log-loading">请选择日志文件查看内容</div>
@@ -121,14 +127,14 @@
         let logRefreshInterval = null;
         
         function switchTab(tabName) {
+            stopLogRefresh();
+            currentLogFile = null;
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelector(`.tab[onclick="switchTab('${tabName}')"]`).classList.add('active');
             document.getElementById('tab-' + tabName).classList.add('active');
             if (tabName === 'logs') {
                 loadLogFiles();
-            } else {
-                stopLogRefresh();
             }
         }
         
@@ -190,6 +196,7 @@
                 alert('请选择日志文件');
                 return;
             }
+            currentLogFile = filename;
             const container = document.getElementById('logContent');
             container.innerHTML = '<div class="log-loading">加载中...</div>';
             try {
@@ -203,6 +210,49 @@
             } catch (e) {
                 container.textContent = '加载失败: ' + e.message;
             }
+        }
+
+        function toggleAutoRefresh() {
+            const checkbox = document.getElementById('autoRefreshCheck');
+            if (checkbox.checked) {
+                startLogRefresh();
+            } else {
+                stopLogRefresh();
+            }
+        }
+
+        function startLogRefresh() {
+            if (logRefreshInterval) return;
+            if (!currentLogFile) {
+                document.getElementById('autoRefreshCheck').checked = false;
+                return;
+            }
+            logRefreshInterval = setInterval(() => {
+                if (currentLogFile) {
+                    loadLogContentNoAlert();
+                }
+            }, 3000);
+        }
+
+        function stopLogRefresh() {
+            if (logRefreshInterval) {
+                clearInterval(logRefreshInterval);
+                logRefreshInterval = null;
+            }
+            document.getElementById('autoRefreshCheck').checked = false;
+        }
+
+        async function loadLogContentNoAlert() {
+            const filename = currentLogFile;
+            if (!filename) return;
+            const container = document.getElementById('logContent');
+            try {
+                const res = await fetch('/api/runtask/logs/' + encodeURIComponent(filename));
+                const data = await res.json();
+                if (data.success) {
+                    container.textContent = data.content || '(空文件)';
+                }
+            } catch (e) {}
         }
 
         async function deleteLogFile() {
@@ -221,6 +271,8 @@
                 const data = await res.json();
                 if (data.success) {
                     alert(data.message);
+                    stopLogRefresh();
+                    currentLogFile = null;
                     loadLogFiles();
                     document.getElementById('logContent').innerHTML = '<div class="log-loading">请选择日志文件查看内容</div>';
                 } else {
