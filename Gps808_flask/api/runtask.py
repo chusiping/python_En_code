@@ -172,3 +172,18 @@ def get_log_content(filename):
         return jsonify({'success': True, 'content': content})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+@runtask_bp.route('/runtask/logs/<filename>', methods=['DELETE'])
+@login_required
+def delete_log_file(filename):
+    import shutil
+    log_path = os.path.join('logs', filename)
+    if not os.path.exists(log_path):
+        return jsonify({'success': False, 'message': '文件不存在'})
+    try:
+        os.makedirs('temp', exist_ok=True)
+        temp_path = os.path.join('temp', filename)
+        shutil.move(log_path, temp_path)
+        return jsonify({'success': True, 'message': f'文件已移动到 temp/{filename}'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
