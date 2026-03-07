@@ -3,12 +3,15 @@ import subprocess
 import os
 import uuid
 import signal
+import psutil
+from time import strftime
 
 runtask_bp = Blueprint('runtask', __name__)
 
 CONFIG_DIR = 'config'
 
 running_processes = {}
+completed_tasks = []
 
 def login_required(f):
     from functools import wraps
@@ -42,6 +45,8 @@ def run_task():
     env['PYTHONIOENCODING'] = 'utf-8'
     
     def generate():
+        process = None
+        return_code = -1
         try:
             yield f"[TASK_ID:{task_id}]\n"
             
@@ -56,6 +61,7 @@ def run_task():
                 env=env
             )
             
+            yield f"[PID:{process.pid}]\n"
             running_processes[task_id] = process
             
             for line in iter(process.stdout.readline, ''):
@@ -63,13 +69,25 @@ def run_task():
                     yield line
             
             process.stdout.close()
-            process.wait()
+            return_code = process.wait() if process else -1
             
         except Exception as e:
             yield f"执行出错: {str(e)}\n"
         finally:
-            if task_id in running_processes:
-                del running_processes[task_id]
+            if process:
+                try:
+                    if task_id in running_processes:
+                        del running_processes[task_id]
+                    completed_tasks.append({
+                        'id': task_id,
+                        'pid': process.pid,
+                        'return_code': return_code,
+                        'finished_at': strftime('%Y-%m-%d %H:%M:%S')
+                    })
+                    if len(completed_tasks) > 50:
+                        completed_tasks.pop(0)
+                except:
+                    pass
     
     return Response(generate(), mimetype='text/plain; charset=utf-8')
 
@@ -94,5 +112,41 @@ def stop_task(task_id):
 def get_tasks():
     tasks = []
     for tid, proc in running_processes.items():
-        tasks.append({'id': tid, 'running': proc.poll() is None})
+        tasks.append({'id': tid, 'pid': proc.pid, 'running': proc.poll() is None})
     return jsonify(tasks)
+
+@runtask_bp.route('/runtask/processes', methods=['GET'])
+@login_required
+def get_running_processes():
+    current_pid = os.getpid()
+    processes = []
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            if proc.info['name'] and 'python' in proc.info['name'].lower():
+                cmdline = proc.info['cmdline']
+                cmd_str = ' '.join(cmdline) if cmdline else ''
+                if 'task.py' in cmd_str:
+                    processes.append({
+                        'pid': proc.info['pid'],
+                        'cmd': cmd_str
+                    })
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    return jsonify(processes)
+
+@runtask_bp.route('/runtask/kill', methods=['POST'])
+@login_required
+def kill_by_pid():
+    data = request.json
+    pid = data.get('pid')
+    if not pid:
+        return jsonify({'success': False, 'message': '请提供PID'})
+    try:
+        import sys
+        if sys.platform == 'win32':
+            subprocess.call(['taskkill', '/F', '/T', '/PID', str(pid)])
+        else:
+            os.kill(int(pid), signal.SIGTERM)
+        return jsonify({'success': True, 'message': f'进程 {pid} 已终止'})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})

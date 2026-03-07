@@ -21,11 +21,24 @@
         button.stop:hover { background: #d32f2f; }
         button.back { background: #2196F3; }
         button.back:hover { background: #1976D2; }
+        button.refresh { background: #FF9800; }
+        button.refresh:hover { background: #F57C00; }
         .task-header { display: flex; justify-content: space-between; align-items: center; background: #333; color: #fff; padding: 8px 12px; border-radius: 4px 4px 0 0; font-size: 13px; }
         .task-header .cmd { color: #0f0; font-family: monospace; }
         .task-box { margin-bottom: 20px; border: 1px solid #ddd; border-radius: 4px; }
         .task-output { background: #1e1e1e; color: #fff; padding: 10px; font-family: monospace; font-size: 13px; min-height: 200px; max-height: 50vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; }
         .task-info { padding: 10px; background: #f9f9f9; border-top: 1px solid #ddd; text-align: center; color: #666; }
+        
+        .process-monitor { margin-top: 30px; padding: 15px; background: #fff3e0; border: 2px solid #ff9800; border-radius: 8px; }
+        .process-monitor h2 { margin: 0 0 15px 0; color: #e65100; font-size: 18px; }
+        .process-list { background: #fff; border: 1px solid #ddd; border-radius: 4px; max-height: 200px; overflow-y: auto; }
+        .process-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 12px; border-bottom: 1px solid #eee; font-size: 13px; }
+        .process-item:last-child { border-bottom: none; }
+        .process-item .pid { color: #d32f2f; font-weight: bold; margin-right: 10px; }
+        .process-item .cmd { flex: 1; font-family: monospace; color: #333; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .process-controls { margin-top: 15px; display: flex; gap: 10px; align-items: center; }
+        .process-controls input { padding: 8px; width: 120px; border: 1px solid #ddd; border-radius: 4px; }
+        .no-processes { padding: 20px; text-align: center; color: #999; }
     </style>
 </head>
 <body>
@@ -45,6 +58,19 @@
             <button class="back" onclick="location.href='/'">返回首页</button>
         </div>
         <div id="tasksContainer"></div>
+        
+        <div class="process-monitor">
+            <h2>运行中的进程 (task.py)</h2>
+            <div class="process-list" id="processList">
+                <div class="no-processes">暂无运行中的任务</div>
+            </div>
+            <div class="process-controls">
+                <input type="text" id="killPid" placeholder="输入PID">
+                <button class="stop" onclick="killByPid()">Kill进程</button>
+                <button class="refresh" onclick="loadProcesses()">刷新</button>
+                <span style="color: #666; font-size: 12px;">(每10秒自动刷新)</span>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -52,6 +78,11 @@
         
         function extractTaskId(firstChunk) {
             const match = firstChunk.match(/\[TASK_ID:([^\]]+)\]/);
+            return match ? match[1] : null;
+        }
+        
+        function extractPid(firstChunk) {
+            const match = firstChunk.match(/\[PID:(\d+)\]/);
             return match ? match[1] : null;
         }
         
@@ -76,6 +107,75 @@
             }
         }
 
+        async function loadProcesses() {
+            try {
+                const res = await fetch('/api/runtask/processes');
+                const processes = await res.json();
+                const container = document.getElementById('processList');
+                if (processes.length === 0) {
+                    container.innerHTML = '<div class="no-processes">暂无运行中的任务</div>';
+                } else {
+                    container.innerHTML = processes.map(p => `
+                        <div class="process-item">
+                            <span class="pid">[PID: ${p.pid}]</span>
+                            <span class="cmd" title="${p.cmd}">${p.cmd}</span>
+                            <button class="stop" style="padding: 4px 8px; font-size: 12px;" onclick="killByPidInput(${p.pid})">Kill</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('加载进程失败:', e);
+            }
+        }
+
+        async function killByPid() {
+            const pid = document.getElementById('killPid').value.trim();
+            if (!pid) {
+                alert('请输入PID');
+                return;
+            }
+            if (!confirm('确定要终止PID为 ' + pid + ' 的进程吗？')) {
+                return;
+            }
+            try {
+                const res = await fetch('/api/runtask/kill', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({pid: parseInt(pid)})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    loadProcesses();
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) {
+                alert('操作失败: ' + e.message);
+            }
+        }
+
+        function killByPidInput(pid) {
+            if (!confirm('确定要终止PID为 ' + pid + ' 的进程吗？')) {
+                return;
+            }
+            fetch('/api/runtask/kill', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({pid: pid})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    loadProcesses();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(e => alert('操作失败: ' + e.message));
+        }
+
         async function runTask() {
             const file = document.getElementById('fileSelect').value;
             if (!file) {
@@ -92,7 +192,7 @@
             const cmd = `python task.py --config config/${file} ${mode}`;
 
             const taskId = 'task_' + Date.now();
-            const task = { id: taskId, backendId: null, cmd: cmd, running: true };
+            const task = { id: taskId, backendId: null, pid: null, cmd: cmd, running: true };
             tasks.push(task);
             renderTask(task);
 
@@ -115,10 +215,16 @@
                     
                     if (firstChunk) {
                         const backendId = extractTaskId(chunk);
+                        const pid = extractPid(chunk);
                         if (backendId) {
                             task.backendId = backendId;
                             result = chunk.replace(/\[TASK_ID:[^\]]+\]\n/, '');
-                        } else {
+                        }
+                        if (pid) {
+                            task.pid = pid;
+                            result = result.replace(/\[PID:\d+\]\n/, '');
+                        }
+                        if (!backendId && !pid) {
                             result = chunk;
                         }
                         firstChunk = false;
@@ -127,10 +233,15 @@
                     }
                     
                     updateOutput(taskId, result);
+                    
+                    if (task.pid) {
+                        document.getElementById(taskId + '_pid').textContent = ' [PID: ' + task.pid + ']';
+                    }
                 }
                 
                 task.running = false;
                 updateTaskHeader(taskId, false);
+                loadProcesses();
             } catch (e) {
                 updateOutput(taskId, '\n执行出错: ' + e.message);
                 task.running = false;
@@ -151,6 +262,7 @@
                     updateOutput(taskId, '\n\n[任务已停止]');
                     task.running = false;
                     updateTaskHeader(taskId, false);
+                    loadProcesses();
                 } else {
                     alert(data.message);
                 }
@@ -166,7 +278,7 @@
             div.id = task.id;
             div.innerHTML = `
                 <div class="task-header" id="${task.id}_header">
-                    <span>执行命令: <span class="cmd">${task.cmd}</span></span>
+                    <span>执行命令: <span class="cmd">${task.cmd}</span> <span id="${task.id}_pid"></span></span>
                     <button class="stop" onclick="stopTask('${task.id}')" id="${task.id}_btn">停止</button>
                 </div>
                 <div class="task-output" id="${task.id}_output">开始执行...</div>
@@ -191,6 +303,8 @@
         }
 
         loadFiles();
+        loadProcesses();
+        setInterval(loadProcesses, 10000);
     </script>
 </body>
 </html>
