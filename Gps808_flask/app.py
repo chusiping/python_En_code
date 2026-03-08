@@ -53,7 +53,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('logged_in'):
-            return redirect('/B6nM9qW2eR4tY7uI8oP0lK')
+            return '<h1>404 Not Found</h1>', 404
         return f(*args, **kwargs)
     return decorated_function
 
@@ -61,7 +61,7 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('logged_in'):
-            return redirect('/B6nM9qW2eR4tY7uI8oP0lK')
+            return '<h1>404 Not Found</h1>', 404
         if session.get('username') != 'admin':
             return '<script>alert("只有管理员可以访问");location.href="/"</script>'
         return f(*args, **kwargs)
