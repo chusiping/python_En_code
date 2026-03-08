@@ -15,6 +15,13 @@
         button.delete:hover { background: #da190b; }
         button.back { background: #2196F3; }
         button.back:hover { background: #1976D2; }
+        .tab-container { max-width: 95%; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); overflow: hidden; }
+        .tabs { display: flex; background: #e0e0e0; border-bottom: 2px solid #2196F3; }
+        .tab { padding: 12px 24px; cursor: pointer; background: #e0e0e0; border: none; font-size: 14px; color: #333; }
+        .tab.active { background: #2196F3; color: white; font-weight: bold; }
+        .tab:hover:not(.active) { background: #ccc; }
+        .tab-content { display: none; padding: 15px; }
+        .tab-content.active { display: block; }
         .file-container { max-width: 95%; margin: 0 auto; background: white; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); padding: 15px; }
         table { width: 100%; border-collapse: collapse; }
         th, td { border: 1px solid #ddd; padding: 6px 10px; text-align: left; font-size: 13px; }
@@ -22,38 +29,112 @@
         td:first-child { text-align: center; }
         .empty { text-align: center; padding: 40px; color: #999; }
         .file-size { text-align: right; }
+        .upload-section { padding: 20px; text-align: center; }
+        .upload-section input[type="file"] { margin: 10px 0; }
+        .upload-section button { padding: 8px 20px; font-size: 14px; }
+        .upload-result { margin-top: 15px; padding: 10px; background: #f0f0f0; border-radius: 4px; }
+        .error { color: #f44336; }
+        .success { color: #4CAF50; }
+        .admin-only { display: none; }
     </style>
 </head>
 <body>
-    <h1> 上传 excle 文件管理</h1>
+    <h1>上传 excle 文件管理</h1>
     <div class="toolbar">
         <button onclick="location.href='/'">← 返回首页</button>
-        <button onclick="loadFiles()">刷新</button>
-        <button class="delete" onclick="deleteSelected()">删除选中</button>
-        <button onclick="document.getElementById('uploadSection').style.display = document.getElementById('uploadSection').style.display === 'none' ? 'block' : 'none'">📤 批量上传</button>
         <button onclick="logout()" style="background:#666">退出登录</button>
     </div>
-    <div id="uploadSection" style="display:none; max-width: 95%; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; text-align: center;">
-        <input type="file" id="fileInput" multiple accept=".xlsx,.xls" style="margin-bottom: 10px;">
-        <button onclick="uploadFiles()">开始上传</button>
-        <div id="uploadResult" style="margin-top: 10px; color: #666;"></div>
-    </div>
-    <div class="file-container">
-        <table>
-            <thead>
-                <tr>
-                    <th style="width:50px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-                    <th>文件名</th>
-                    <th>大小</th>
-                    <th>修改时间</th>
-                    <th style="width:80px">操作</th>
-                </tr>
-            </thead>
-            <tbody id="tbody"></tbody>
-        </table>
+    
+    <div class="tab-container">
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('excel')">📁 Excel文件管理</button>
+            <button class="tab" onclick="switchTab('config')">⚙️ 上传配置文件</button>
+        </div>
+        
+        <div id="tab-excel" class="tab-content active">
+            <div class="toolbar">
+                <button onclick="loadFiles()">刷新</button>
+                <button class="delete" onclick="deleteSelected()">删除选中</button>
+                <button onclick="document.getElementById('uploadSection').style.display = document.getElementById('uploadSection').style.display === 'none' ? 'block' : 'none'">📤 批量上传</button>
+            </div>
+            <div id="uploadSection" style="display:none; max-width: 95%; margin: 10px auto; background: white; padding: 15px; border-radius: 8px; text-align: center;">
+                <input type="file" id="fileInput" multiple accept=".xlsx,.xls" style="margin-bottom: 10px;">
+                <button onclick="uploadFiles()">开始上传</button>
+                <div id="uploadResult" style="margin-top: 10px; color: #666;"></div>
+            </div>
+            <div class="file-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50px"><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                            <th>文件名</th>
+                            <th>大小</th>
+                            <th>修改时间</th>
+                            <th style="width:80px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody"></tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div id="tab-config" class="tab-content">
+            <div class="toolbar">
+                <button onclick="document.getElementById('configUploadSection').style.display = document.getElementById('configUploadSection').style.display === 'none' ? 'block' : 'none'">📤 上传配置文件</button>
+                <button onclick="loadConfigFiles()">刷新</button>
+                <button class="delete admin-only" id="configDeleteBtn" onclick="deleteConfigSelected()">删除选中</button>
+            </div>
+            <div id="configUploadSection" style="display:none; padding: 5px; text-align: center;">
+                <p style="color: #666; font-size: 13px;">
+                    文件名格式: <code>config_YYYYMMDDHHMM.xlsx</code> (如 config_202603081033.xlsx)                    只能上传 .xlsx 文件，相同文件名会跳过
+                </p>
+                <input type="file" id="configFileInput" accept=".xlsx">
+                <button onclick="uploadConfigFile()">上传配置文件</button>
+                <div id="configUploadResult" class="upload-result"></div>
+            </div>
+            <div class="file-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width:50px"><input type="checkbox" id="configSelectAll" onchange="toggleConfigSelectAll()"></th>
+                            <th>文件名</th>
+                            <th>大小</th>
+                            <th>修改时间</th>
+                            <th style="width:80px">操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="configTbody"></tbody>
+                </table>
+            </div>
+        </div>
     </div>
 
     <script>
+        let isAdmin = false;
+        
+        async function checkAdmin() {
+            const res = await fetch('/api/check-admin');
+            const data = await res.json();
+            isAdmin = data.isAdmin;
+            if (isAdmin) {
+                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'inline-block');
+            }
+        }
+        
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            
+            if (tabName === 'excel') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('tab-excel').classList.add('active');
+            } else {
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('tab-config').classList.add('active');
+                loadConfigFiles();
+            }
+        }
+        
         async function loadFiles() {
             const res = await fetch('/api/xlsx/list');
             const files = await res.json();
@@ -150,12 +231,115 @@
             alert(msg);
             loadFiles();
         }
+        
+        async function uploadConfigFile() {
+            const fileInput = document.getElementById('configFileInput');
+            const file = fileInput.files[0];
+            if (!file) {
+                showConfigResult('请选择文件', 'error');
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('file', file);
+            
+            const res = await fetch('/api/upload-config', {
+                method: 'POST',
+                body: formData
+            });
+            const result = await res.json();
+            
+            if (result.success) {
+                showConfigResult('上传成功: ' + result.filename, 'success');
+            } else {
+                showConfigResult('上传失败: ' + result.message, 'error');
+            }
+        }
+        
+        function showConfigResult(msg, type) {
+            const div = document.getElementById('configUploadResult');
+            div.textContent = msg;
+            div.className = 'upload-result ' + type;
+        }
 
         async function logout() {
             await fetch('/api/logout', {method: 'POST'});
             location.href = '/login';
         }
+        
+        async function loadConfigFiles() {
+            const res = await fetch('/api/config/list');
+            const files = await res.json();
+            const tbody = document.getElementById('configTbody');
+            
+            if (files.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="empty">暂无配置文件</td></tr>';
+                return;
+            }
 
+            tbody.innerHTML = files.map(f => `
+                <tr>
+                    <td><input type="checkbox" class="config-file-check" value="${f.name}"></td>
+                    <td>${f.name}</td>
+                    <td class="file-size">${formatSize(f.size)}</td>
+                    <td>${f.modified}</td>
+                    <td>${isAdmin ? '<button class="delete" onclick="deleteConfigFile(\'' + f.name + '\')">删除</button>' : '-'}</td>
+                </tr>
+            `).join('');
+        }
+        
+        function toggleConfigSelectAll() {
+            const checked = document.getElementById('configSelectAll').checked;
+            document.querySelectorAll('.config-file-check').forEach(cb => cb.checked = checked);
+        }
+        
+        async function deleteConfigFile(filename) {
+            if (!confirm(`确定要删除配置文件 "${filename}" 吗？`)) return;
+            
+            const res = await fetch('/api/config/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({filename})
+            });
+            const result = await res.json();
+            if (result.success) {
+                alert('删除成功');
+                loadConfigFiles();
+            } else {
+                alert('删除失败: ' + result.message);
+            }
+        }
+        
+        async function deleteConfigSelected() {
+            if (!isAdmin) {
+                alert('只有管理员可以删除配置文件');
+                return;
+            }
+            
+            const checked = document.querySelectorAll('.config-file-check:checked');
+            if (checked.length === 0) {
+                alert('请选择要删除的文件');
+                return;
+            }
+            
+            const filenames = Array.from(checked).map(cb => cb.value);
+            if (!confirm(`确定要删除选中的 ${filenames.length} 个配置文件吗？`)) return;
+
+            let deleted = 0;
+            for (const filename of filenames) {
+                const res = await fetch('/api/config/delete', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({filename})
+                });
+                const result = await res.json();
+                if (result.success) deleted++;
+            }
+            alert(`已删除 ${deleted} 个配置文件`);
+            loadConfigFiles();
+        }
+
+        checkAdmin();
         loadFiles();
     </script>
 </body>
