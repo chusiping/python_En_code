@@ -53,7 +53,7 @@ def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('logged_in'):
-            return redirect('/login')
+            return redirect('/B6nM9qW2eR4tY7uI8oP0lK')
         return f(*args, **kwargs)
     return decorated_function
 
@@ -61,13 +61,13 @@ def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not session.get('logged_in'):
-            return redirect('/login')
+            return redirect('/B6nM9qW2eR4tY7uI8oP0lK')
         if session.get('username') != 'admin':
             return '<script>alert("只有管理员可以访问");location.href="/"</script>'
         return f(*args, **kwargs)
     return decorated_function
 
-@app.route('/login')
+@app.route('/B6nM9qW2eR4tY7uI8oP0lK')
 def login_page():
     return render_template('login.html')
 
@@ -98,6 +98,10 @@ def check_admin():
     return jsonify({'isAdmin': session.get('username') == 'admin', 'username': session.get('username')})
 
 @app.route('/')
+def home():
+    return '<h1>404 Not Found</h1>', 404
+
+@app.route('/index')
 @login_required
 def index():
     return render_template('index.html')

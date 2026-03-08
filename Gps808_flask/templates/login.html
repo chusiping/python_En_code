@@ -47,7 +47,7 @@
             const result = await res.json();
             
             if (result.success) {
-                location.href = '/';
+                location.href = '/index';
             } else {
                 errorDiv.textContent = result.message;
             }

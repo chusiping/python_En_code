@@ -37,7 +37,7 @@
         <button onclick="copyRow()">复制行</button>
         <button onclick="confirmChanges()">✓ 确认修改</button>
         <button onclick="refresh()">刷新</button>
-        <button onclick="location.href='/'">🏠 首页</button>
+        <button onclick="location.href='/index'">🏠 首页</button>
         <button onclick="logout()" style="background:#666">退出登录</button>
     </div>
     <div class="table-container">
@@ -85,7 +85,7 @@
 
         async function logout() {
             await fetch('/api/logout', {method: 'POST'});
-            location.href = '/login';
+            location.href = '/B6nM9qW2eR4tY7uI8oP0lK';
         }
 
         loadFiles();

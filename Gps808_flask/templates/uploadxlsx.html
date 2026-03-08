@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>上传 excle 文件管理</title>
+    <title>上传文件管理</title>
     <style>
         * { box-sizing: border-box; }
         body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
@@ -39,15 +39,15 @@
     </style>
 </head>
 <body>
-    <h1>上传 excle 文件管理</h1>
+    <h1>上传文件管理</h1>
     <div class="toolbar">
-        <button onclick="location.href='/'">← 返回首页</button>
+        <button onclick="location.href='/index'">← 返回首页</button>
         <button onclick="logout()" style="background:#666">退出登录</button>
     </div>
     
     <div class="tab-container">
         <div class="tabs">
-            <button class="tab active" onclick="switchTab('excel')">📁 Excel文件管理</button>
+            <button class="tab active" onclick="switchTab('excel')">📁 上传轨迹文件</button>
             <button class="tab" onclick="switchTab('config')">⚙️ 上传配置文件</button>
         </div>
         
@@ -264,7 +264,7 @@
 
         async function logout() {
             await fetch('/api/logout', {method: 'POST'});
-            location.href = '/login';
+            location.href = '/B6nM9qW2eR4tY7uI8oP0lK';
         }
         
         async function loadConfigFiles() {
