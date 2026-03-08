@@ -9,6 +9,18 @@ UPLOAD_FOLDER = 'excle'
 TEMP_FOLDER = 'temp'
 CONFIG_DIR = 'config'
 
+def get_unique_filename(directory, filename):
+    if not os.path.exists(os.path.join(directory, filename)):
+        return filename
+    
+    name, ext = os.path.splitext(filename)
+    counter = 1
+    while True:
+        new_filename = f"{name}({counter}){ext}"
+        if not os.path.exists(os.path.join(directory, new_filename)):
+            return new_filename
+        counter += 1
+
 if not os.path.exists(UPLOAD_FOLDER):
     os.makedirs(UPLOAD_FOLDER)
 
@@ -56,12 +68,11 @@ def delete_xlsx_file():
     if not os.path.exists(TEMP_FOLDER):
         os.makedirs(TEMP_FOLDER)
     
-    dest_filepath = os.path.join(TEMP_FOLDER, filename)
-    if os.path.exists(dest_filepath):
-        return jsonify({'success': False, 'message': 'temp目录已存在同名文件'})
+    unique_filename = get_unique_filename(TEMP_FOLDER, filename)
+    dest_filepath = os.path.join(TEMP_FOLDER, unique_filename)
     
     os.rename(src_filepath, dest_filepath)
-    return jsonify({'success': True})
+    return jsonify({'success': True, 'message': f'文件已重命名为 {unique_filename} 移动到 temp'})
 
 @upload_bp.route('/xlsx/delete-batch', methods=['POST'])
 @login_required
@@ -73,10 +84,10 @@ def delete_xlsx_files_batch():
         if os.path.exists(src_filepath):
             if not os.path.exists(TEMP_FOLDER):
                 os.makedirs(TEMP_FOLDER)
-            dest_filepath = os.path.join(TEMP_FOLDER, filename)
-            if not os.path.exists(dest_filepath):
-                os.rename(src_filepath, dest_filepath)
-                deleted.append(filename)
+            unique_filename = get_unique_filename(TEMP_FOLDER, filename)
+            dest_filepath = os.path.join(TEMP_FOLDER, unique_filename)
+            os.rename(src_filepath, dest_filepath)
+            deleted.append(unique_filename)
     return jsonify({'success': True, 'deleted': deleted})
 
 @upload_bp.route('/upload', methods=['POST'])

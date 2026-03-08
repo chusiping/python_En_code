@@ -9,6 +9,19 @@ from time import strftime
 runtask_bp = Blueprint('runtask', __name__)
 
 CONFIG_DIR = 'config'
+TEMP_DIR = 'temp'
+
+def get_unique_filename(directory, filename):
+    if not os.path.exists(os.path.join(directory, filename)):
+        return filename
+    
+    name, ext = os.path.splitext(filename)
+    counter = 1
+    while True:
+        new_filename = f"{name}({counter}){ext}"
+        if not os.path.exists(os.path.join(directory, new_filename)):
+            return new_filename
+        counter += 1
 
 running_processes = {}
 completed_tasks = []
@@ -181,9 +194,10 @@ def delete_log_file(filename):
     if not os.path.exists(log_path):
         return jsonify({'success': False, 'message': '文件不存在'})
     try:
-        os.makedirs('temp', exist_ok=True)
-        temp_path = os.path.join('temp', filename)
+        os.makedirs(TEMP_DIR, exist_ok=True)
+        unique_filename = get_unique_filename(TEMP_DIR, filename)
+        temp_path = os.path.join(TEMP_DIR, unique_filename)
         shutil.move(log_path, temp_path)
-        return jsonify({'success': True, 'message': f'文件已移动到 temp/{filename}'})
+        return jsonify({'success': True, 'message': f'文件已重命名为 {unique_filename} 移动到 temp'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})

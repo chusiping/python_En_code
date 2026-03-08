@@ -8,6 +8,18 @@ export_bp = Blueprint('export', __name__)
 CONFIG_DIR = 'config'
 TEMP_DIR = 'temp'
 
+def get_unique_filename(directory, filename):
+    if not os.path.exists(os.path.join(directory, filename)):
+        return filename
+    
+    name, ext = os.path.splitext(filename)
+    counter = 1
+    while True:
+        new_filename = f"{name}({counter}){ext}"
+        if not os.path.exists(os.path.join(directory, new_filename)):
+            return new_filename
+        counter += 1
+
 def login_required(f):
     from functools import wraps
     @wraps(f)
@@ -78,11 +90,10 @@ def delete_json_file(filename):
         return jsonify({'success': False, 'message': '文件不存在'})
     if not os.path.exists(TEMP_DIR):
         os.makedirs(TEMP_DIR)
-    dest_path = os.path.join(TEMP_DIR, filename)
-    if os.path.exists(dest_path):
-        return jsonify({'success': False, 'message': 'temp 文件夹中已存在同名文件'})
+    unique_filename = get_unique_filename(TEMP_DIR, filename)
+    dest_path = os.path.join(TEMP_DIR, unique_filename)
     try:
         shutil.move(filepath, dest_path)
-        return jsonify({'success': True, 'message': '文件已移动到 temp 文件夹'})
+        return jsonify({'success': True, 'message': f'文件已重命名为 {unique_filename} 移动到 temp 文件夹'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
