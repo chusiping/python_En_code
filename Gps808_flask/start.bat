@@ -4,7 +4,7 @@ echo   Flask Startup Options
 echo ========================================
 echo.
 echo   [1] Dev Mode (python app.py)
-echo   [2] Production Mode (gunicorn)
+echo   [2] Production Mode (waitress)
 echo   [0] Exit
 echo.
 echo ========================================
@@ -22,16 +22,16 @@ exit /b
 :dev
 echo.
 echo Starting Dev Mode...
-start http://0.0.0.0:7533/B6nM9qW2eR4tY7uI8oP0lK
+start http://localhost:7533/B6nM9qW2eR4tY7uI8oP0lK
 python app.py
 pause >nul
 goto end
 
 :prod
 echo.
-echo Starting Production Mode...
-start http://0.0.0.0:7533/B6nM9qW2eR4tY7uI8oP0lK
-D:\python311\Scripts\gunicorn.exe -w 4 -b 0.0.0.0:7533 app:app
+echo Starting Production Mode (Waitress)...
+start http://localhost:7533/B6nM9qW2eR4tY7uI8oP0lK
+python -c "from waitress import serve; from app import app; serve(app, host='0.0.0.0', port=7533)"
 pause >nul
 goto end
 
