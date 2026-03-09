@@ -1,4 +1,38 @@
 @echo off
-start http://localhost:7533/B6nM9qW2eR4tY7uI8oP0lK
+echo ========================================
+echo   Flask Startup Options
+echo ========================================
+echo.
+echo   [1] Dev Mode (python app.py)
+echo   [2] Production Mode (gunicorn)
+echo   [0] Exit
+echo.
+echo ========================================
+
+set /p choice=Select (0-2):
+
+if "%choice%"=="1" goto dev
+if "%choice%"=="2" goto prod
+if "%choice%"=="0" goto end
+
+echo Invalid choice
+pause >nul
+exit /b
+
+:dev
+echo.
+echo Starting Dev Mode...
+start http://0.0.0.0:7533/B6nM9qW2eR4tY7uI8oP0lK
 python app.py
-pause
+pause >nul
+goto end
+
+:prod
+echo.
+echo Starting Production Mode...
+start http://0.0.0.0:7533/B6nM9qW2eR4tY7uI8oP0lK
+D:\python311\Scripts\gunicorn.exe -w 4 -b 0.0.0.0:7533 app:app
+pause >nul
+goto end
+
+:end

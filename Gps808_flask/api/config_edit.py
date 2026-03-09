@@ -79,17 +79,20 @@ def get_json_content(filename):
 @login_required
 def get_data():
     filename = request.args.get('file', 'config.xlsx')
-    wb = get_workbook(filename)
-    ws = wb.active
-    data = []
-    for row in ws.iter_rows(values_only=True):
-        row_data = [convert_value(cell) for cell in row]
-        if any(cell != '' for cell in row_data):
-            data.append(row_data)
-    wb.close()
-    response = jsonify(data)
-    response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
-    return response
+    try:
+        wb = get_workbook(filename)
+        ws = wb.active
+        data = []
+        for row in ws.iter_rows(values_only=True):
+            row_data = [convert_value(cell) for cell in row]
+            if any(cell != '' for cell in row_data):
+                data.append(row_data)
+        wb.close()
+        response = jsonify(data)
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        return response
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @config_bp.route('/cell', methods=['POST'])
 @login_required

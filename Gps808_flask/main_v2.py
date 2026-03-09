@@ -273,7 +273,7 @@ def main():
             if i < min(process_count, total_rows) - 1:  # 不是最后一条
                 # print(f"\n等待{_miao}秒...")
 
-                _miao = 2  # 测试用，测完注释掉
+                #_miao = 2  # 测试用，测完注释掉
                 time.sleep(_miao)
                 
         except ValueError as e:
