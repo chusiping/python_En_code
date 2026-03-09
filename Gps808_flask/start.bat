@@ -3,6 +3,9 @@ echo ========================================
 echo   Flask Startup Options
 echo ========================================
 echo.
+set /p ipaddr=Server IP [default: localhost]:
+if "%ipaddr%"=="" set ipaddr=localhost
+
 echo   [1] Dev Mode (python app.py)
 echo   [2] Production Mode (waitress)
 echo   [0] Exit
@@ -22,7 +25,7 @@ exit /b
 :dev
 echo.
 echo Starting Dev Mode...
-start http://localhost:7533/B6nM9qW2eR4tY7uI8oP0lK
+start http://%ipaddr%:7533/B6nM9qW2eR4tY7uI8oP0lK
 python app.py
 pause >nul
 goto end
@@ -30,7 +33,7 @@ goto end
 :prod
 echo.
 echo Starting Production Mode (Waitress)...
-start http://localhost:7533/B6nM9qW2eR4tY7uI8oP0lK
+start http://%ipaddr%:7533/B6nM9qW2eR4tY7uI8oP0lK
 python -c "from waitress import serve; from app import app; serve(app, host='0.0.0.0', port=7533)"
 pause >nul
 goto end
