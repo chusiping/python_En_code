@@ -19,7 +19,10 @@
 3. 本地测试
     python main_v2.py --excel "excle/科韵路停车场_截断数据.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
 
+4. 以waitress服务启动 服务器ip 172.18.1.197 ，start.bat 不能有中文
 
+5. 测试服务器ip 172.18.2.44（容易搞错）
+6. 
 测试转正式需要调整的：
     1. 间隔秒数 _miao = miao
     2. 发送的条数，测试一般是3条5条
