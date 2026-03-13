@@ -201,3 +201,65 @@ def delete_log_file(filename):
         return jsonify({'success': True, 'message': f'文件已重命名为 {unique_filename} 移动到 temp'})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)})
+
+@runtask_bp.route('/runtask/logs/summary', methods=['GET'])
+@login_required
+def get_log_summary():
+    import re
+    log_dir = 'logs'
+    if not os.path.exists(log_dir):
+        return jsonify({'success': True, 'results': []})
+    
+    results = []
+    for filename in os.listdir(log_dir):
+        if not filename.endswith('.log') or 'pid' not in filename.lower():
+            continue
+        
+        log_path = os.path.join(log_dir, filename)
+        try:
+            with open(log_path, 'r', encoding='utf-8') as f:
+                lines = f.readlines()
+            
+            start_line = None
+            cmd_line = None
+            result_line = None
+            
+            for line in lines:
+                if 'START' in line:
+                    start_line = line.strip()
+                    break
+            
+            if cmd_line is None:
+                for line in lines:
+                    if line.strip().startswith('CMD:'):
+                        cmd_line = line.strip()
+                        break
+            
+            for line in lines:
+                if '统计结果' in line:
+                    result_line = line.strip()
+                    break
+            
+            date_match = re.search(r'(\d{8})', filename)
+            file_date = date_match.group(1) if date_match else '00000000'
+            
+            results.append({
+                'filename': filename,
+                'file_date': file_date,
+                'start_line': start_line,
+                'cmd_line': cmd_line,
+                'result_line': result_line
+            })
+        except Exception as e:
+            results.append({
+                'filename': filename,
+                'file_date': '00000000',
+                'start_line': None,
+                'cmd_line': None,
+                'result_line': None,
+                'error': str(e)
+            })
+    
+    results.sort(key=lambda x: x['file_date'], reverse=True)
+    
+    return jsonify({'success': True, 'results': results})

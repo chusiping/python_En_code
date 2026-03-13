@@ -58,6 +58,17 @@
         .log-controls .auto-refresh input { width: 16px; height: 16px; }
         .log-content { background: #1e1e1e; color: #0f0; padding: 15px; font-family: monospace; font-size: 13px; min-height: 300px; max-height: 60vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; border-radius: 4px; }
         .log-loading { text-align: center; color: #666; padding: 20px; }
+        
+        .log-summary { padding: 15px; background: #f5f5f5; border-radius: 8px; }
+        .summary-controls { margin-bottom: 15px; display: flex; gap: 10px; align-items: center; }
+        .summary-item { background: #fff; border: 1px solid #ddd; border-radius: 4px; padding: 12px; margin-bottom: 10px; }
+        .summary-item .filename { font-weight: bold; color: #1976D2; margin-bottom: 8px; }
+        .summary-item .line { padding: 4px 0; font-family: monospace; font-size: 13px; }
+        .summary-item .start-line { color: #4CAF50; }
+        .summary-item .cmd-line { color: #FF9800; white-space: pre-wrap; }
+        .summary-item .result-line { color: #9C27B0; }
+        .summary-label { display: inline-block; width: 80px; font-weight: bold; }
+        .no-summary { text-align: center; color: #999; padding: 20px; }
     </style>
 </head>
 <body>
@@ -66,6 +77,7 @@
         <div class="tabs">
             <div class="tab active" onclick="switchTab('runtask')">执行任务</div>
             <div class="tab" onclick="switchTab('logs')">查看日志</div>
+            <div class="tab" onclick="switchTab('summary')">日志汇总</div>
         </div>
         
         <div id="tab-runtask" class="tab-content active">
@@ -119,6 +131,18 @@
                 </div>
             </div>
         </div>
+        
+        <div id="tab-summary" class="tab-content">
+            <div class="log-summary">
+                <div class="summary-controls">
+                    <button class="view-log" onclick="loadSummary()">查看汇总结果</button>
+                    <button class="refresh" onclick="loadSummary()">刷新</button>
+                </div>
+                <div id="summaryContent">
+                    <div class="no-summary">点击"查看汇总结果"按钮加载汇总信息</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -135,6 +159,9 @@
             document.getElementById('tab-' + tabName).classList.add('active');
             if (tabName === 'logs') {
                 loadLogFiles();
+            }
+            if (tabName === 'summary') {
+                document.getElementById('summaryContent').innerHTML = '<div class="no-summary">点击"查看汇总结果"按钮加载汇总信息</div>';
             }
         }
         
@@ -280,6 +307,33 @@
                 }
             } catch (e) {
                 alert('删除失败: ' + e.message);
+            }
+        }
+
+        async function loadSummary() {
+            const container = document.getElementById('summaryContent');
+            container.innerHTML = '<div class="log-loading">加载中...</div>';
+            try {
+                const res = await fetch('/api/runtask/logs/summary');
+                const data = await res.json();
+                if (data.success) {
+                    if (data.results.length === 0) {
+                        container.innerHTML = '<div class="no-summary">没有找到包含pid的日志文件</div>';
+                        return;
+                    }
+                    container.innerHTML = data.results.map(item => `
+                        <div class="summary-item">
+                            <div class="filename">${item.filename}</div>
+                            <div class="line start-line"><span class="summary-label">START:</span> ${item.start_line || '(无)'}</div>
+                            <div class="line cmd-line"><span class="summary-label">CMD:</span> ${item.cmd_line || '(无)'}</div>
+                            <div class="line result-line"><span class="summary-label">统计结果:</span> ${item.result_line || '(无)'}</div>
+                        </div>
+                    `).join('');
+                } else {
+                    container.innerHTML = '<div class="no-summary">加载失败: ' + data.message + '</div>';
+                }
+            } catch (e) {
+                container.innerHTML = '<div class="no-summary">加载失败: ' + e.message + '</div>';
             }
         }
         
