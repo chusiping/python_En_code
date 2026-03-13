@@ -212,7 +212,7 @@ def get_log_summary():
     
     results = []
     for filename in os.listdir(log_dir):
-        if not filename.endswith('.log') or 'pid' not in filename.lower():
+        if not filename.endswith('.log') or 'pid' not in filename.lower() or 'run' in filename.lower():
             continue
         
         log_path = os.path.join(log_dir, filename)
