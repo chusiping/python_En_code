@@ -68,6 +68,12 @@
         .summary-item .cmd-line { color: #FF9800; white-space: pre-wrap; }
         .summary-item .result-line { color: #9C27B0; }
         .summary-label { display: inline-block; width: 80px; font-weight: bold; }
+        
+        .summary-table { width: 100%; border-collapse: collapse; background: #fff; }
+        .summary-table th, .summary-table td { border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 13px; }
+        .summary-table th { background: #4CAF50; color: white; }
+        .summary-table tr:nth-child(even) { background: #f9f9f9; }
+        .summary-table tr:hover { background: #f1f1f1; }
         .no-summary { text-align: center; color: #999; padding: 20px; }
     </style>
 </head>
@@ -321,14 +327,17 @@
                         container.innerHTML = '<div class="no-summary">没有找到包含pid的日志文件</div>';
                         return;
                     }
-                    container.innerHTML = data.results.map(item => `
-                        <div class="summary-item">
-                            <div class="filename">${item.filename}</div>
-                            <div class="line start-line"><span class="summary-label">START:</span> ${item.start_line || '(无)'}</div>
-                            <div class="line cmd-line"><span class="summary-label">CMD:</span> ${item.cmd_line || '(无)'}</div>
-                            <div class="line result-line"><span class="summary-label">统计结果:</span> ${item.result_line || '(无)'}</div>
-                        </div>
-                    `).join('');
+                    container.innerHTML = '<table class="summary-table"><thead><tr><th>序号</th><th>文件名</th><th>手机号</th><th>IP:端口</th><th>轨迹文件</th><th>统计结果</th></tr></thead><tbody>' + 
+                        data.results.map((item, index) => `
+                            <tr>
+                                <td>${index + 1}</td>
+                                <td>${item.filename}</td>
+                                <td>${item.phone || '-'}</td>
+                                <td>${item.server || '-'}</td>
+                                <td>${item.excel || '-'}</td>
+                                <td>${item.result_line || '-'}</td>
+                            </tr>
+                        `).join('') + '</tbody></table>';
                 } else {
                     container.innerHTML = '<div class="no-summary">加载失败: ' + data.message + '</div>';
                 }

@@ -254,33 +254,34 @@ def get_log_summary():
             date_match = re.search(r'(\d{8})', filename)
             file_date = date_match.group(1) if date_match else '00000000'
             
-            parsed_cmd = None
+            parsed_phone = ''
+            parsed_server = ''
+            parsed_excel = ''
             if cmd_line:
                 phone_match = re.search(r'--phone\s+(\S+)', cmd_line)
                 ip_match = re.search(r'--server-ip\s+(\S+)', cmd_line)
                 port_match = re.search(r'--server-port\s+(\S+)', cmd_line)
                 excel_match = re.search(r'--excel\s+(\S+\.xlsx)', cmd_line)
                 
-                phone = phone_match.group(1) if phone_match else ''
-                server = f"{ip_match.group(1)}:{port_match.group(1)}" if ip_match and port_match else ''
-                excel = excel_match.group(1) if excel_match else ''
-                
-                if phone or server or excel:
-                    parsed_cmd = f"{phone} || {server} || {excel}"
+                parsed_phone = phone_match.group(1) if phone_match else ''
+                parsed_server = f"{ip_match.group(1)}:{port_match.group(1)}" if ip_match and port_match else ''
+                parsed_excel = excel_match.group(1) if excel_match else ''
             
             results.append({
                 'filename': filename,
                 'file_date': file_date,
-                'start_line': start_line,
-                'cmd_line': parsed_cmd if parsed_cmd else cmd_line,
+                'phone': parsed_phone,
+                'server': parsed_server,
+                'excel': parsed_excel,
                 'result_line': result_line
             })
         except Exception as e:
             results.append({
                 'filename': filename,
                 'file_date': '00000000',
-                'start_line': None,
-                'cmd_line': None,
+                'phone': '',
+                'server': '',
+                'excel': '',
                 'result_line': None,
                 'error': str(e)
             })
