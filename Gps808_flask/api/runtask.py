@@ -237,17 +237,42 @@ def get_log_summary():
             
             for line in lines:
                 if '统计结果' in line:
-                    result_line = line.strip()
+                    result_line_raw = line.strip()
+                    total_match = re.search(r'总记录数:(\d+)', result_line_raw)
+                    unprocessed_match = re.search(r'还有(\d+)条记录未处理', result_line_raw)
+                    success_match = re.search(r'成功处理:\s*(\d+)', result_line_raw)
+                    fail_match = re.search(r'失败处理:\s*(\d+)', result_line_raw)
+                    
+                    total = total_match.group(1) if total_match else '0'
+                    unprocessed = unprocessed_match.group(1) if unprocessed_match else '0'
+                    success = success_match.group(1) if success_match else '0'
+                    fail = fail_match.group(1) if fail_match else '0'
+                    
+                    result_line = f"{success}/{total}成功，失败{int(unprocessed) + int(fail)}"
                     break
             
             date_match = re.search(r'(\d{8})', filename)
             file_date = date_match.group(1) if date_match else '00000000'
             
+            parsed_cmd = None
+            if cmd_line:
+                phone_match = re.search(r'--phone\s+(\S+)', cmd_line)
+                ip_match = re.search(r'--server-ip\s+(\S+)', cmd_line)
+                port_match = re.search(r'--server-port\s+(\S+)', cmd_line)
+                excel_match = re.search(r'--excel\s+(\S+\.xlsx)', cmd_line)
+                
+                phone = phone_match.group(1) if phone_match else ''
+                server = f"{ip_match.group(1)}:{port_match.group(1)}" if ip_match and port_match else ''
+                excel = excel_match.group(1) if excel_match else ''
+                
+                if phone or server or excel:
+                    parsed_cmd = f"{phone} || {server} || {excel}"
+            
             results.append({
                 'filename': filename,
                 'file_date': file_date,
                 'start_line': start_line,
-                'cmd_line': cmd_line,
+                'cmd_line': parsed_cmd if parsed_cmd else cmd_line,
                 'result_line': result_line
             })
         except Exception as e:
