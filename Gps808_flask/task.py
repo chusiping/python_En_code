@@ -47,7 +47,7 @@ SEND_TO_SERVER = args.is_SEND
 
 # ==================== 配置 ====================
 LOG_DIR = 'logs'
-CHECK_INTERVAL = 5  # 秒
+CHECK_INTERVAL = 30  # 从5面改为30，减少日志压力
 MAX_CONCURRENT_PROCESSES = 50
 
 # ==================== 参数解析 ====================
@@ -90,7 +90,7 @@ def start_process(task):
     task_name = task['name']
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
     parent_pid = os.getpid()
-    log_path = os.path.join(LOG_DIR, f"{task_name}_{timestamp}_pid{parent_pid}.log")
+    log_path = os.path.join(LOG_DIR, f"pid{parent_pid}_{timestamp}_{task_name}.log")
 
     cmd = [
         'python', '-u', 'main_v2.py',
