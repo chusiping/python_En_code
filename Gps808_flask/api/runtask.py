@@ -261,7 +261,7 @@ def get_log_summary():
                 phone_match = re.search(r'--phone\s+(\S+)', cmd_line)
                 ip_match = re.search(r'--server-ip\s+(\S+)', cmd_line)
                 port_match = re.search(r'--server-port\s+(\S+)', cmd_line)
-                excel_match = re.search(r'--excel\s+(\S+\.xlsx)', cmd_line)
+                excel_match = re.search(r'--excel\s+(.+?\.xlsx)(?=\s+--|\s+$)', cmd_line)
                 
                 parsed_phone = phone_match.group(1) if phone_match else ''
                 parsed_server = f"{ip_match.group(1)}:{port_match.group(1)}" if ip_match and port_match else ''
