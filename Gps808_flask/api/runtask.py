@@ -104,6 +104,75 @@ def run_task():
     
     return Response(generate(), mimetype='text/plain; charset=utf-8')
 
+@runtask_bp.route('/runtask/buchuan', methods=['POST'])
+@login_required
+def run_task_buchuan():
+    data = request.json
+    filename = data.get('file', '')
+    send = data.get('send', False)
+    
+    if not filename:
+        return jsonify({'success': False, 'message': '请选择配置文件'})
+    
+    filepath = os.path.join(CONFIG_DIR, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'success': False, 'message': '配置文件不存在'})
+    
+    task_id = str(uuid.uuid4())
+    mode = '--send' if send else '--no-send'
+    cmd = f'python task_buchuan.py --config {filepath} {mode}'
+    
+    project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    env = os.environ.copy()
+    env['PYTHONIOENCODING'] = 'utf-8'
+    
+    def generate():
+        process = None
+        return_code = -1
+        try:
+            yield f"[TASK_ID:{task_id}]\n"
+            
+            process = subprocess.Popen(
+                cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                encoding='utf-8',
+                errors='replace',
+                cwd=project_root,
+                shell=True,
+                env=env
+            )
+            
+            yield f"[PID:{process.pid}]\n"
+            running_processes[task_id] = process
+            
+            for line in iter(process.stdout.readline, ''):
+                if line:
+                    yield line
+            
+            process.stdout.close()
+            return_code = process.wait() if process else -1
+            
+        except Exception as e:
+            yield f"执行出错: {str(e)}\n"
+        finally:
+            if process:
+                try:
+                    if task_id in running_processes:
+                        del running_processes[task_id]
+                    completed_tasks.append({
+                        'id': task_id,
+                        'pid': process.pid,
+                        'return_code': return_code,
+                        'finished_at': strftime('%Y-%m-%d %H:%M:%S')
+                    })
+                    if len(completed_tasks) > 50:
+                        completed_tasks.pop(0)
+                except:
+                    pass
+    
+    return Response(generate(), mimetype='text/plain; charset=utf-8')
+
 @runtask_bp.route('/runtask/stop/<task_id>', methods=['POST'])
 @login_required
 def stop_task(task_id):
@@ -139,6 +208,25 @@ def get_running_processes():
                 cmdline = proc.info['cmdline']
                 cmd_str = ' '.join(cmdline) if cmdline else ''
                 if 'task.py' in cmd_str:
+                    processes.append({
+                        'pid': proc.info['pid'],
+                        'cmd': cmd_str
+                    })
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            pass
+    return jsonify(processes)
+
+@runtask_bp.route('/runtask/processes-buchuan', methods=['GET'])
+@login_required
+def get_running_processes_buchuan():
+    current_pid = os.getpid()
+    processes = []
+    for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+        try:
+            if proc.info['name'] and 'python' in proc.info['name'].lower():
+                cmdline = proc.info['cmdline']
+                cmd_str = ' '.join(cmdline) if cmdline else ''
+                if 'task_buchuan.py' in cmd_str:
                     processes.append({
                         'pid': proc.info['pid'],
                         'cmd': cmd_str

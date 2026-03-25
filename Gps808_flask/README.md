@@ -1,3 +1,5 @@
+# 业务逻辑
+
 1. excel_to_config.py
     excel_to_config.py 读取排班表 config.xlsx 生成 task.json 
     异常判断：配置里的excle文件实际不存在目录下，或名称错误，则cmd里提示，防止出异常
@@ -35,4 +37,22 @@
 
 测试转正式需要调整的：
     1. 间隔秒数 _miao = miao
-    2. 发送的条数，测试一般是3条5条
+        2. 发送的条数，测试一般是3条5条
+
+# opencode 关键逻辑
+
+## 1.补传逻辑
+
+```
+Thinking: 完成了。我添加了：
+1. run_task_buchuan() 函数 - 运行 main_v2_buchuan.py
+2. get_running_processes_buchuan() API - 获取 main_v2_buchuan.py 的进程列表
+3. 同时也更新了原来的 get_running_processes() 函数，排除了 buchuan 的进程
+
+已完成。添加了：
+1. run_task_buchuan() - 执行 main_v2_buchuan.py 
+2. /runtask/processes-buchuan - 获取补传任务进程列表
+3. 原有 /runtask/processes 排除 buchuan 进程
+
+```
+
