@@ -31,6 +31,7 @@
 	a 间隔时间固定（不计算数据的间隔秒）
 	b 上传的坐标的时间从exle里取
 	c html新开补传功能不和正常任务混同
+    增加task_buchuan.py  main_v2_buchuan.py 页面独立处理补传数据和将来的功能升级 cmd = 'python', '-u', 'main_v2_buchuan.py',
 
 测试转正式需要调整的：
     1. 间隔秒数 _miao = miao
