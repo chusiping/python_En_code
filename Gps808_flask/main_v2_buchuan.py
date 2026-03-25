@@ -211,7 +211,7 @@ def main():
             #     _miao = diff_seconds_safe(excel_data[i][1], excel_data[i+1][1])
             
             # 补传功能：增加获取文件的时间列
-            buchuan_datetime = excel_data[i][1]
+            buchuan_datetime = str(excel_data[i][1])
 
             # print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
             # print(f"    手机: {terminal_phone}")
