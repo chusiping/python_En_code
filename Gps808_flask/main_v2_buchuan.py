@@ -101,7 +101,7 @@ def main():
     _altitude_B = 15
     _satellite_count_A = 5                   #卫星数量
     _satellite_count_B = 10
-    _miao = 3
+    _miao = 1
 
     #B方式测试： 使用外部参数传入使用 ==================================================
     # 范例：python main_v2.py --excel "excle/科韵路停车场_截断数据.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
