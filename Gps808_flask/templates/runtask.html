@@ -82,6 +82,7 @@
     <div class="container">
         <div class="tabs">
             <div class="tab active" onclick="switchTab('runtask')">执行任务</div>
+            <div class="tab" onclick="switchTab('buchuan')">数据补传</div>
             <div class="tab" onclick="switchTab('logs')">查看日志</div>
             <div class="tab" onclick="switchTab('summary')">日志汇总</div>
         </div>
@@ -111,6 +112,36 @@
                     <input type="text" id="killPid" placeholder="输入PID">
                     <button class="stop" onclick="killByPid()">Kill进程</button>
                     <button class="refresh" onclick="loadProcesses()">刷新</button>
+                    <span style="color: #666; font-size: 12px;">(每10秒自动刷新)</span>
+                </div>
+            </div>
+        </div>
+        
+        <div id="tab-buchuan" class="tab-content">
+            <div class="toolbar">
+                <label>选择配置文件:
+                    <select id="fileSelectBuchuan">
+                        <option value="">加载中...</option>
+                    </select>
+                </label>
+                <label class="checkbox-wrapper">
+                    <input type="checkbox" id="sendCheckBuchuan">
+                    正式发送
+                </label>
+                <button id="runBtnBuchuan" onclick="runTaskBuchuan()">执行任务</button>
+                <button class="back" onclick="location.href='/index'">返回首页</button>
+            </div>
+            <div id="tasksContainerBuchuan"></div>
+            
+            <div class="process-monitor">
+                <h2>运行中的进程 (main_v2_buchuan.py)</h2>
+                <div class="process-list" id="processListBuchuan">
+                    <div class="no-processes">暂无运行中的任务</div>
+                </div>
+                <div class="process-controls">
+                    <input type="text" id="killPidBuchuan" placeholder="输入PID">
+                    <button class="stop" onclick="killByPidBuchuan()">Kill进程</button>
+                    <button class="refresh" onclick="loadProcessesBuchuan()">刷新</button>
                     <span style="color: #666; font-size: 12px;">(每10秒自动刷新)</span>
                 </div>
             </div>
@@ -153,6 +184,7 @@
 
     <script>
         let tasks = [];
+        let tasksBuchuan = [];
         let currentLogFile = null;
         let logRefreshInterval = null;
         
@@ -168,6 +200,10 @@
             }
             if (tabName === 'summary') {
                 document.getElementById('summaryContent').innerHTML = '<div class="no-summary">点击"查看汇总结果"按钮加载汇总信息</div>';
+            }
+            if (tabName === 'buchuan') {
+                loadFilesBuchuan();
+                loadProcessesBuchuan();
             }
         }
         
@@ -545,6 +581,222 @@
         loadProcesses();
         checkAdmin();
         setInterval(loadProcesses, 10000);
+        
+        async function loadFilesBuchuan() {
+            try {
+                const res = await fetch('/api/config/jsonfiles');
+                const files = await res.json();
+                const select = document.getElementById('fileSelectBuchuan');
+                select.innerHTML = '';
+                if (files.length === 0) {
+                    select.innerHTML = '<option value="">暂无JSON文件</option>';
+                    return;
+                }
+                files.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f;
+                    opt.textContent = f;
+                    select.appendChild(opt);
+                });
+            } catch (e) {
+                alert('加载文件列表失败: ' + e.message);
+            }
+        }
+
+        async function loadProcessesBuchuan() {
+            try {
+                const res = await fetch('/api/runtask/processes-buchuan');
+                const processes = await res.json();
+                const container = document.getElementById('processListBuchuan');
+                if (processes.length === 0) {
+                    container.innerHTML = '<div class="no-processes">暂无运行中的任务</div>';
+                } else {
+                    container.innerHTML = processes.map(p => `
+                        <div class="process-item">
+                            <span class="pid">[PID: ${p.pid}]</span>
+                            <span class="cmd" title="${p.cmd}">${p.cmd}</span>
+                            <button class="stop" style="padding: 4px 8px; font-size: 12px;" onclick="killByPidInputBuchuan(${p.pid})">Kill</button>
+                        </div>
+                    `).join('');
+                }
+            } catch (e) {
+                console.error('加载进程失败:', e);
+            }
+        }
+
+        async function killByPidBuchuan() {
+            const pid = document.getElementById('killPidBuchuan').value.trim();
+            if (!pid) {
+                alert('请输入PID');
+                return;
+            }
+            if (!confirm('确定要终止PID为 ' + pid + ' 的进程吗？')) {
+                return;
+            }
+            try {
+                const res = await fetch('/api/runtask/kill', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({pid: parseInt(pid)})
+                });
+                const data = await res.json();
+                if (data.success) {
+                    alert(data.message);
+                    loadProcessesBuchuan();
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) {
+                alert('操作失败: ' + e.message);
+            }
+        }
+
+        function killByPidInputBuchuan(pid) {
+            if (!confirm('确定要终止PID为 ' + pid + ' 的进程吗？')) {
+                return;
+            }
+            fetch('/api/runtask/kill', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({pid: pid})
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    loadProcessesBuchuan();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(e => alert('操作失败: ' + e.message));
+        }
+
+        async function runTaskBuchuan() {
+            const file = document.getElementById('fileSelectBuchuan').value;
+            if (!file) {
+                alert('请选择配置文件');
+                return;
+            }
+
+            if (!confirm('是否确认开始执行补传任务？')) {
+                return;
+            }
+
+            const sendCheck = document.getElementById('sendCheckBuchuan').checked;
+            const mode = sendCheck ? '--send' : '--no-send';
+            const cmd = `python main_v2_buchuan.py --config config/${file} ${mode}`;
+
+            const taskId = 'buchuan_' + Date.now();
+            const task = { id: taskId, backendId: null, pid: null, cmd: cmd, running: true };
+            tasksBuchuan.push(task);
+            renderTaskBuchuan(task);
+
+            try {
+                const response = await fetch('/api/runtask/buchuan', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({file: file, send: sendCheck})
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let result = '';
+                let firstChunk = true;
+
+                while (true) {
+                    const {done, value} = await reader.read();
+                    if (done) break;
+                    const chunk = decoder.decode(value);
+                    
+                    if (firstChunk) {
+                        const backendId = extractTaskId(chunk);
+                        const pid = extractPid(chunk);
+                        if (backendId) {
+                            task.backendId = backendId;
+                            result = chunk.replace(/\[TASK_ID:[^\]]+\]\n/, '');
+                        }
+                        if (pid) {
+                            task.pid = pid;
+                            result = result.replace(/\[PID:\d+\]\n/, '');
+                        }
+                        if (!backendId && !pid) {
+                            result = chunk;
+                        }
+                        firstChunk = false;
+                    } else {
+                        result += chunk;
+                    }
+                    
+                    updateOutputBuchuan(taskId, result);
+                    
+                    if (task.pid) {
+                        document.getElementById(taskId + '_pid').textContent = ' [PID: ' + task.pid + ']';
+                    }
+                }
+                
+                task.running = false;
+                updateTaskHeaderBuchuan(taskId, false);
+                loadProcessesBuchuan();
+            } catch (e) {
+                updateOutputBuchuan(taskId, '\n执行出错: ' + e.message);
+                task.running = false;
+                updateTaskHeaderBuchuan(taskId, false);
+            }
+        }
+
+        function renderTaskBuchuan(task) {
+            const container = document.getElementById('tasksContainerBuchuan');
+            const div = document.createElement('div');
+            div.className = 'task-box';
+            div.id = task.id;
+            div.innerHTML = `
+                <div class="task-header" id="${task.id}_header">
+                    <span>执行命令: <span class="cmd">${task.cmd}</span> <span id="${task.id}_pid"></span></span>
+                    <button class="stop" onclick="stopTaskBuchuan('${task.id}')" id="${task.id}_btn">停止</button>
+                </div>
+                <div class="task-output" id="${task.id}_output">开始执行...</div>
+            `;
+            container.appendChild(div);
+        }
+
+        function updateOutputBuchuan(taskId, text) {
+            const el = document.getElementById(taskId + '_output');
+            if (el) {
+                el.innerHTML = text;
+                el.scrollTop = el.scrollHeight;
+            }
+        }
+
+        function updateTaskHeaderBuchuan(taskId, running) {
+            const btn = document.getElementById(taskId + '_btn');
+            if (btn) {
+                btn.disabled = !running;
+                btn.textContent = running ? '停止' : '已停止';
+            }
+        }
+
+        async function stopTaskBuchuan(taskId) {
+            const task = tasksBuchuan.find(t => t.id === taskId);
+            if (!task || !task.backendId) {
+                alert('任务ID无效');
+                return;
+            }
+            try {
+                const res = await fetch(`/api/runtask/stop/${task.backendId}`, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    updateOutputBuchuan(taskId, '\n\n[任务已停止]');
+                    task.running = false;
+                    updateTaskHeaderBuchuan(taskId, false);
+                    loadProcessesBuchuan();
+                } else {
+                    alert(data.message);
+                }
+            } catch (e) {
+                alert('停止失败: ' + e.message);
+            }
+        }
         
         async function checkAdmin() {
             try {
