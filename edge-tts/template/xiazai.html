@@ -44,6 +44,13 @@
 
         .audio-player { margin-top: 15px; }
         .audio-player audio { width: 100%; }
+        .file-list { margin-top: 10px; }
+        .file-item { display: flex; align-items: center; padding: 10px; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 8px; background: #f9f9f9; }
+        .file-item audio { flex: 1; margin-left: 10px; }
+        .file-item .file-name { min-width: 150px; }
+        .file-item input[type="checkbox"] { margin-right: 10px; }
+        .toolbar { margin-bottom: 15px; }
+        .toolbar label { margin-right: 15px; }
     </style>
 </head>
 <body>
@@ -56,6 +63,10 @@
         </div>
 
         <div id="tts" class="tab-content active">
+            <div class="form-group">
+                <label>主题:</label>
+                <input type="text" id="tts_topic" placeholder="请输入主题（用于文件名）">
+            </div>
             <div class="form-group">
                 <label>输入文字:</label>
                 <textarea id="tts_text" rows="6" placeholder="请输入要转换为语音的文字"></textarea>
@@ -73,11 +84,11 @@
         </div>
 
         <div id="listen" class="tab-content">
-            <div class="form-group">
-                <label>选择音频文件:</label>
-                <input type="file" id="audio_file" accept="audio/*">
+            <div class="toolbar">
+                <label><input type="checkbox" id="select-all" onchange="toggleSelectAll()"> 全选</label>
+                <button class="btn" onclick="deleteSelected()">批量删除</button>
             </div>
-            <div class="audio-player" id="audio_player"></div>
+            <div class="file-list" id="file-list"></div>
         </div>
     </div>
 
@@ -88,86 +99,95 @@
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
                 tab.classList.add('active');
                 document.getElementById(tab.dataset.tab).classList.add('active');
+                if (tab.dataset.tab === 'listen') {
+                    loadFiles();
+                }
             });
         });
 
         async function generateAudio() {
             const text = document.getElementById('tts_text').value.trim();
             const voice = document.getElementById('tts_voice').value;
+            const topic = document.getElementById('tts_topic').value.trim();
             
             if (!text) {
                 alert('请输入文字');
                 return;
             }
 
+            const btn = document.querySelector('#tts .btn');
+            btn.disabled = true;
+            btn.textContent = '转换中...';
+
             const res = await fetch('/api/tts', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({text, voice})
+                body: JSON.stringify({text, voice, topic})
+            });
+            const data = await res.json();
+            
+            btn.disabled = false;
+            btn.textContent = '确定转';
+            
+            if (data.success) {
+                const filename = data.output_file.split(/[/\\]/).pop();
+                alert('音频已保存: ' + filename);
+            } else {
+                alert('生成失败: ' + data.error);
+            }
+        }
+
+        async function loadFiles() {
+            const res = await fetch('/api/files');
+            const files = await res.json();
+            const list = document.getElementById('file-list');
+            document.getElementById('select-all').checked = false;
+            list.innerHTML = files.map(f => `
+                <div class="file-item">
+                    <input type="checkbox" value="${f.name}" onchange="checkSelectAll()">
+                    <span class="file-name">${f.name}</span>
+                    <audio controls src="${f.path}"></audio>
+                </div>
+            `).join('');
+        }
+
+        function toggleSelectAll() {
+            const checked = document.getElementById('select-all').checked;
+            document.querySelectorAll('#file-list input[type="checkbox"]').forEach(cb => cb.checked = checked);
+        }
+
+        function checkSelectAll() {
+            const checkboxes = document.querySelectorAll('#file-list input[type="checkbox"]');
+            const allChecked = checkboxes.length > 0 && Array.from(checkboxes).every(cb => cb.checked);
+            document.getElementById('select-all').checked = allChecked;
+        }
+
+        async function deleteSelected() {
+            const checkboxes = document.querySelectorAll('#file-list input[type="checkbox"]:checked');
+            const files = Array.from(checkboxes).map(cb => cb.value);
+            
+            if (files.length === 0) {
+                alert('请选择要删除的文件');
+                return;
+            }
+            
+            if (!confirm(`确定要删除选中的 ${files.length} 个文件吗？`)) {
+                return;
+            }
+            
+            const res = await fetch('/api/files/delete', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({files})
             });
             const data = await res.json();
             
             if (data.success) {
-                alert('音频生成完成');
-                loadTasks();
+                loadFiles();
+            } else {
+                alert('删除失败: ' + data.error);
             }
         }
-
-        let tasksCache = {};
-
-        async function loadTasks() {
-            const res = await fetch('/api/tasks');
-            const tasks = await res.json();
-
-            const list = document.getElementById('task-list-tts');
-            const typeTasks = tasks.filter(t => t.type === 'tts');
-
-            typeTasks.forEach(task => {
-                let card = list.querySelector('[data-task-id="' + task.task_id + '"]');
-
-                if (!card) {
-                    card = document.createElement('div');
-                    card.className = 'task-card';
-                    card.dataset.taskId = task.task_id;
-                    card.innerHTML = `
-                        <div class="task-header">
-                            <div>
-                                <span class="task-id"></span>
-                            </div>
-                            <div>
-                                <span class="task-status"></span>
-                            </div>
-                        </div>
-                        <div class="task-message"></div>
-                    `;
-                    list.insertBefore(card, list.firstChild);
-                }
-
-                card.querySelector('.task-id').textContent = task.task_id;
-                card.querySelector('.task-status').textContent = task.status;
-                card.querySelector('.task-status').className = 'task-status ' + task.status;
-                if (task.error_msg) {
-                    card.querySelector('.task-message').textContent = task.error_msg;
-                }
-            });
-
-            const currentIds = new Set(typeTasks.map(t => t.task_id));
-            list.querySelectorAll('.task-card').forEach(card => {
-                if (!currentIds.has(card.dataset.taskId)) {
-                    card.remove();
-                }
-            });
-        }
-
-        document.getElementById('audio_file').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                const url = URL.createObjectURL(file);
-                document.getElementById('audio_player').innerHTML = `<audio controls src="${url}"></audio>`;
-            }
-        });
-
-        loadTasks();
     </script>
 </body>
 </html>
