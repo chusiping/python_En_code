@@ -1,6 +1,7 @@
 import os
 import hashlib
 import argparse
+import shutil
 
 parser = argparse.ArgumentParser(description='查找并删除重复文件')
 parser.add_argument('root_dir', help='要扫描的目录路径')
@@ -40,21 +41,29 @@ for root, dirs, files in os.walk(root_dir):
             print("错误:", full_path, e)
 
 # 输出重复文件
+has_duplicate = False
+
 for key, file_list in hash_dict.items():
 
     if len(file_list) > 1:
-
+        has_duplicate = True
         print("\n发现重复文件：")
 
         for f in file_list:
             print(f)
 
         # 保留第一个
+        duplicate_dir = os.path.join(root_dir, '重复')
+        os.makedirs(duplicate_dir, exist_ok=True)
+
         for duplicate in file_list[1:]:
 
             try:
-                os.remove(duplicate)
-                print("已删除:", duplicate)
+                shutil.move(duplicate, os.path.join(duplicate_dir, os.path.basename(duplicate)))
+                print("已移动:", duplicate)
 
             except Exception as e:
-                print("删除失败:", duplicate, e)
+                print("移动失败:", duplicate, e)
+
+if not has_duplicate:
+    print("未发现重复文件")
