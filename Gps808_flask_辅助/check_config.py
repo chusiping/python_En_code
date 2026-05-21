@@ -112,6 +112,39 @@ with open(output_path, 'w', encoding='utf-8') as f:
     for phone, cnt in sorted(phone_count.items(), key=lambda x: -x[1]):
         f.write(f"  {phone}: {cnt}条\n")
 
+    f.write("\n【号码对应Excel文件统计】\n")
+    phone_xlsx_count = defaultdict(set)
+    for row in rows:
+        phone = row[headers.index('terminal_phone')]
+        xlsx = row[headers.index('excel_file')]
+        if phone and xlsx:
+            phone_xlsx_count[phone].add(xlsx)
+    for phone, xlsx_set in sorted(phone_xlsx_count.items(), key=lambda x: -len(x[1])):
+        f.write(f"  {phone}: {len(xlsx_set)}个文件\n")
+        for xf in sorted(xlsx_set):
+            f.write(f"    - {xf}\n")
+
+    f.write("\n【按日期汇总统计】\n")
+    date_count = defaultdict(int)
+    for row in rows:
+        date = row[headers.index('start_date')]
+        if date:
+            date_count[date] += 1
+    for date, cnt in sorted(date_count.items()):
+        f.write(f"  {date}: {cnt}条\n")
+
+    f.write("\n【按日期+号码交叉统计】\n")
+    date_phone_count = defaultdict(lambda: defaultdict(int))
+    for row in rows:
+        date = row[headers.index('start_date')]
+        phone = row[headers.index('terminal_phone')]
+        if date and phone:
+            date_phone_count[date][phone] += 1
+    for date in sorted(date_phone_count.keys()):
+        f.write(f"  {date}:\n")
+        for phone, cnt in sorted(date_phone_count[date].items()):
+            f.write(f"    {phone}: {cnt}条\n")
+
     f.write("\n【启用状态统计】\n")
     enabled_count = defaultdict(int)
     for row in rows:
