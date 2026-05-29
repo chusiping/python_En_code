@@ -2,8 +2,8 @@ import re
 from openpyxl import load_workbook
 from collections import defaultdict
 
-xlsx_path = r'E:\git_15home\python_En_code_git\Gps808_flask_辅助\config_20260324223310.xlsx'
-output_path = r'E:\git_15home\python_En_code_git\Gps808_flask_辅助\rt.txt'
+xlsx_path = r'config_20260601223310right.xlsx'
+output_path = r'rt.txt'
 
 wb = load_workbook(xlsx_path)
 ws = wb['Sheet1']
@@ -109,6 +109,7 @@ with open(output_path, 'w', encoding='utf-8') as f:
     for row in rows:
         if row[headers.index('terminal_phone')]:
             phone_count[row[headers.index('terminal_phone')]] += 1
+    f.write(f"  终端电话总数: {len(phone_count)}\n")
     for phone, cnt in sorted(phone_count.items(), key=lambda x: -x[1]):
         f.write(f"  {phone}: {cnt}条\n")
 
