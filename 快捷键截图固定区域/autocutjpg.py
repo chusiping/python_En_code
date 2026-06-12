@@ -20,8 +20,9 @@ def shot():
             output_dir,
             datetime.now().strftime("%Y%m%d_%H%M%S.jpg")
         )
-
-        img = sct.grab(sct.monitors[1])
+        # img = sct.grab(sct.monitors[1])
+        region = {"left": 1, "top": 80, "width": 1910, "height": 910}
+        img = sct.grab(region)
         mss.tools.to_png(img.rgb, img.size, output=filename)
 
 keyboard.add_hotkey('F4', shot)
