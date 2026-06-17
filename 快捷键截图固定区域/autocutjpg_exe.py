@@ -1,4 +1,6 @@
 import io
+import json
+import os
 import sys
 import tkinter as tk
 
@@ -10,13 +12,35 @@ import winsound
 
 screenshot_count = 0
 
+DEFAULT_REGION = {"left": 38, "top": 113, "width": 1230, "height": 560}
+
+
+def app_dir():
+    if getattr(sys, "frozen", False):
+        return os.path.dirname(sys.executable)
+    return os.path.dirname(os.path.abspath(__file__))
+
+
+CONFIG_PATH = os.path.join(app_dir(), "config.json")
+
+
+def load_region():
+    """从 config.json 读取截图区域，文件缺失或字段不全时返回默认值"""
+    try:
+        with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+            cfg = json.load(f)
+        region = {**DEFAULT_REGION, **cfg.get("region", {})}
+        return region
+    except (FileNotFoundError, json.JSONDecodeError):
+        return dict(DEFAULT_REGION)
+
 
 def shot():
-    """截取屏幕区域 (1,80) 1910x910, 复制到剪贴板"""
+    """截取屏幕区域 (从 config.json 读取), 复制到剪贴板"""
     global screenshot_count
     try:
+        region = load_region()
         with mss.mss() as sct:
-            region = {"left": 38, "top": 113, "width": 1230, "height": 560}
             img = sct.grab(region)
             pil_img = Image.frombytes("RGB", img.size, img.rgb)
 
@@ -28,9 +52,11 @@ def shot():
         winsound.MessageBeep() 
 
         win32clipboard.OpenClipboard()
-        win32clipboard.EmptyClipboard()
-        win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
-        win32clipboard.CloseClipboard()
+        try:
+            win32clipboard.EmptyClipboard()
+            win32clipboard.SetClipboardData(win32clipboard.CF_DIB, data)
+        finally:
+            win32clipboard.CloseClipboard()
 
         screenshot_count += 1
         if root.winfo_exists():
@@ -73,9 +99,12 @@ x = screen_w - window_width - 10
 y = screen_h - window_height - 60
 root.geometry(f"{window_width}x{window_height}+{x}+{y}")
 
-info_label = tk.Label(
-    root, text="快捷键 F4  |  区域: (1,80) 1910x910\n截图复制到剪贴板",
-    font=("Microsoft YaHei", 9))
+region = load_region()
+info_text = (
+    f"快捷键 F4  |  区域: ({region['left']},{region['top']}) "
+    f"{region['width']}x{region['height']}\n截图复制到剪贴板"
+)
+info_label = tk.Label(root, text=info_text, font=("Microsoft YaHei", 9))
 info_label.pack(pady=(8, 4))
 
 count_label = tk.Label(root, text="已复制: 0", font=("Microsoft YaHei", 9))
