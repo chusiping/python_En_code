@@ -4,6 +4,7 @@ import mss
 from PIL import Image
 from io import BytesIO
 import win32clipboard
+import winsound
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-d', '--directory', default='output')
@@ -48,6 +49,7 @@ def shot():
 
         img = sct.grab(region)
         copy_image_to_clipboard(img)
+        winsound.MessageBeep()  # 播放系统提示音
 
         print("截图已复制到剪贴板")
 
