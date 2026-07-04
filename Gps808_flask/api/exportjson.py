@@ -45,15 +45,16 @@ def admin_required(f):
 def export_json():
     data = request.json
     filename = data.get('file', '')
-    
+    is_buchaun = data.get('is_buchaun', False)
+
     if not filename:
         return jsonify({'success': False, 'message': '请选择文件'})
-    
+
     filepath = os.path.join(CONFIG_DIR, filename)
     if not os.path.exists(filepath):
         return jsonify({'success': False, 'message': '文件不存在'})
-    
-    cmd = ['chcp', '65001', '>', 'nul', '&&', 'python', 'excel_to_config.py', filepath]
+
+    cmd = ['chcp', '65001', '>', 'nul', '&&', 'python', 'excel_to_config.py', filepath, str(is_buchaun)]
     
     project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     

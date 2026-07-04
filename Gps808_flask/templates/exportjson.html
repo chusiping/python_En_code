@@ -49,7 +49,8 @@
                         <option value="">加载中...</option>
                     </select>
                 </label>
-                <button id="exportBtn" onclick="exportJson()">导出 JSON</button>
+                <button id="exportBtn" onclick="exportJson(false)">导出 JSON</button>
+                <button id="exportBuchuanBtn" onclick="exportJson(true)">导出补传JSON</button>
                 <button class="back" onclick="location.href='/index'">返回首页</button>
             </div>
             <div class="output" id="output">请选择文件并点击"导出JSON"按钮</div>
@@ -180,7 +181,7 @@
             }
         }
 
-        async function exportJson() {
+        async function exportJson(is_buchaun = false) {
             const file = document.getElementById('fileSelect').value;
             if (!file) {
                 alert('请选择文件');
@@ -188,7 +189,7 @@
             }
 
             const output = document.getElementById('output');
-            const btn = document.getElementById('exportBtn');
+            const btn = document.getElementById(is_buchaun ? 'exportBuchuanBtn' : 'exportBtn');
             btn.disabled = true;
             output.innerHTML = '开始导出...\n';
 
@@ -196,7 +197,7 @@
                 const response = await fetch('/api/exportjson', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({file: file})
+                    body: JSON.stringify({file: file, is_buchaun: is_buchaun})
                 });
 
                 const reader = response.body.getReader();

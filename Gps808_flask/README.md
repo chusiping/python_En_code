@@ -35,6 +35,14 @@
 	c html新开补传功能不和正常任务混同
     增加task_buchuan.py  main_v2_buchuan.py 页面独立处理补传数据和将来的功能升级 cmd = 'python', '-u', 'main_v2_buchuan.py',
 
+    再改（2026-7-3）
+    b 坐标的时间部分（日期）不从exle里读取，改为从配置文件里的日期读取，补传任务确定及开始直接运行
+    d 不在检查任务的后期时间，直接在10秒后运行
+    修改：task_buchuan.py 156行 70行
+    
+    再改（2026-7-4）
+    修改了exportjson 页面 ，在“导出json”按钮的后面，增加个按钮“导出补传json”，在原来的“导出json”调用的接口函数上修改，增加一个 is_buchaun = true 参数，并传入到cmd命令里 excel_to_config.py 增加接收参数，允许导出
+
 测试转正式需要调整的：
     1. 间隔秒数 _miao = miao
         2. 发送的条数，测试一般是3条5条

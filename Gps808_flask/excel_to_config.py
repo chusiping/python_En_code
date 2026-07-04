@@ -17,7 +17,7 @@ try:
 except:
     pass  # Linux上自动忽略，无需平台检查
 
-def excel_to_config(excel_path, output_dir="config"):
+def excel_to_config(excel_path, output_dir="config",is_buchuan=False):
     """
     将Excel配置转换为JSON配置文件
     """
@@ -86,9 +86,17 @@ def excel_to_config(excel_path, output_dir="config"):
             "description": str(row.get('description', '')).strip(),
             "schedule_note": schedule_note
         }
-        if schedule_time and schedule_time > datetime.now().strftime("%Y-%m-%d %H:%M:%S"):    
-            tasks.append(task)
-            print(f"  -{index+1}.添加配置: {task['name']}")
+        if schedule_time:
+            if schedule_time > datetime.now().strftime("%Y-%m-%d %H:%M:%S"):    
+                tasks.append(task)
+                print(f"  -{index+1}.添加配置: {task['name']}")
+            else:
+                if is_buchuan:
+                    tasks.append(task)
+
+
+                
+
     
     # 创建输出目录
     os.makedirs(output_dir, exist_ok=True)
@@ -234,7 +242,7 @@ def validate_task_config(row, index):
 if __name__ == "__main__":
     # 从命令行参数获取配置文件路径
     if len(sys.argv) < 2:
-        print("用法: python excel_to_config.py <配置文件路径>")
+        print("用法: python excel_to_config.py <配置文件路径> [is_buchaun]")
         print()
         print("config目录下可用的配置文件:")
         config_dir = "config"
@@ -243,8 +251,9 @@ if __name__ == "__main__":
                 if f.endswith(".xlsx"):
                     print(f"  - {config_dir}/{f}")
         sys.exit(1)
-    
+
     excel_path = sys.argv[1]
+    is_buchaun = sys.argv[2].lower() == "true" if len(sys.argv) > 2 else False
     
     # # 进行验证
     try:
@@ -265,7 +274,7 @@ if __name__ == "__main__":
         traceback.print_exc()
 
     if os.path.exists(excel_path):
-        config = excel_to_config(excel_path)
+        config = excel_to_config(excel_path,"config",is_buchaun)
         if config:
             print("\n配置预览:")
             for task in config["tasks"]:  # 显示前3个
