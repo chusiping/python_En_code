@@ -230,7 +230,7 @@ def main():
             # print(f"    时间: {testdate.replace_date_to_today()}")
             # print(f"    制动: {brake_on}")
             print(f"\n[发送到服务器]")
-            print(f"     发送 {_terminal_phone} 第{i+1}/{total_rows}条记录 => 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on} acc:{status} 里程:{mileage / 10:.1f}  等待{_miao}秒")
+            print(f"     发送 {_terminal_phone} 第{i+1}/{total_rows}条记录 => 数据包时间 {buchuan_datetime} 纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon} 速度: {speed} km/h 偏移后{speed} 海拔: {altitude} 随机取 卫星: {satellite_count} 方向: {direction} 制动: {brake_on} acc:{status} 里程:{mileage / 10:.1f}  等待{_miao}秒")
             # print(f"    纬度: {latitude} 偏移后{new_lat} 经度: {longitude} 偏移后{new_lon}")
 
             # 此为补传文件，坐标的时间使用excel里的shiji
