@@ -65,7 +65,8 @@ def excel_to_config(excel_path, output_dir="config",is_buchuan=False):
                 parsed_time = datetime.strptime(datetime_str, "%Y-%m-%d %H:%M:%S")
                 # 使用易读的格式，而不是ISO格式
                 schedule_time = parsed_time.strftime("%Y-%m-%d %H:%M:%S")  # 改为这个
-                schedule_note = f"定时执行于 {schedule_time}"
+                # schedule_note = f"定时执行于 {schedule_time}" 原来代码逻辑
+                schedule_note = f"{'补传日期数据' if is_buchuan else '定时执行于'} {start_date_str}"
             except ValueError as e:
                 print(f"⚠  第{index+2}行日期时间格式错误: {start_date_str} {start_time_str}")
                 schedule_time = None

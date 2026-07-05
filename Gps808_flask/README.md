@@ -38,14 +38,27 @@
     再改（2026-7-3）
     b 坐标的时间部分（日期）不从exle里读取，改为从配置文件里的日期读取，补传任务确定及开始直接运行
     d 不在检查任务的后期时间，直接在10秒后运行
-    修改：task_buchuan.py 156行 70行
+    修改：task_buchuan.py 156行 
     
     再改（2026-7-4）
-    修改了exportjson 页面 ，在“导出json”按钮的后面，增加个按钮“导出补传json”，在原来的“导出json”调用的接口函数上修改，增加一个 is_buchaun = true 参数，并传入到cmd命令里 excel_to_config.py 增加接收参数，允许导出
+    修改了exportjson 页面 
+        1 在“导出json”按钮的后面，增加个按钮“导出补传json”，
+        2 在原来的“导出json”调用的接口函数上修改，增加一个 is_buchaun = true 参数，并传入到cmd命令里 
+    修改 excel_to_config.py 
+        1 excel_to_config 增加接收参数 is_buchuan ，允许导出
+        2 69行 schedule_note 里的 “定时执行于” 改为 “补传日期”
+        3 95行 tasks.append 
+    修改：main_v2_buchuan.py 
+        1 218行，组合json的日期和ecel里的时间为新的时间字段给数据包
+        2 增加 --date 参数
+    修改 task_buchuan.py
+        1 70行 改时间比较逻辑
+        2 157 取消时间比较
+    
 
 测试转正式需要调整的：
     1. 间隔秒数 _miao = miao
-        2. 发送的条数，测试一般是3条5条
+        1. 发送的条数，测试一般是3条5条
 
 # opencode 关键逻辑
 

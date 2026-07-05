@@ -8,6 +8,7 @@ import argparse
 import os
 import re
 import get_LastMileage
+from datetime import datetime
 
 
 
@@ -107,6 +108,7 @@ def main():
     # 范例：python main_v2.py --excel "excle/科韵路停车场_截断数据.xlsx" --phone 13301110130 --server-ip 14.23.86.188 --server-port 6608 --no-send
     parser = argparse.ArgumentParser(description='JT808数据发送')
     parser.add_argument('--excel', required=True, help='Excel文件路径')
+    parser.add_argument('--date', required=True, help='数据补传日期')  # edit 20260704 增加补传日期参数
     parser.add_argument('--phone', required=True, help='终端号码')
     parser.add_argument('--server-ip', required=True, help='服务器IP')
     parser.add_argument('--server-port', type=int, required=True, help='服务器端口')
@@ -115,6 +117,7 @@ def main():
     parser.set_defaults(is_SEND=False)  # 默认值
     args = parser.parse_args()
     _excleFile = args.excel    
+    _date = args.date  # edit 20260704 增加补传日期参数
     _terminal_phone = args.phone           
     SERVER_IP = args.server_ip               
     SERVER_PORT = args.server_port   
@@ -211,7 +214,10 @@ def main():
             #     _miao = diff_seconds_safe(excel_data[i][1], excel_data[i+1][1])
             
             # 补传功能：增加获取文件的时间列
-            buchuan_datetime = str(excel_data[i][1])
+            # buchuan_datetime = str(excel_data[i][1]) #不要这个了
+            part_time = datetime.strptime(str(excel_data[i][1]), "%Y-%m-%d %H:%M:%S")
+            part_date = datetime.strptime(_date, "%Y-%m-%d %H:%M:%S")
+            buchuan_datetime = str(datetime.combine(part_date.date(), part_time.time()).strftime("%Y-%m-%d %H:%M:%S"))  # edit 20260705 取CLI --date参数的年月日和Excel时间的时分秒，组合成补传时间
 
             # print(f"    平台: {SERVER_IP}:{SERVER_PORT}")
             # print(f"    手机: {terminal_phone}")

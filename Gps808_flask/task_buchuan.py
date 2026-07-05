@@ -67,7 +67,7 @@ def load_tasks(now=None):
         if not schedule_time:
             continue  # 没有时间的任务忽略
         target = datetime.strptime(schedule_time, '%Y-%m-%d %H:%M:%S')
-        if target > now:
+        if target < now: # edit by jarry 2026-7-3 改为 target < now 理由是：补传从配置文件读取时间，不再修改excel轨迹文件的日期
             future_tasks.append(task)
 
     return future_tasks
@@ -95,6 +95,7 @@ def start_process(task):
     cmd = [
         'python', '-u', 'main_v2_buchuan.py',
         '--excel', task['excel_file'],
+        '--date', task['schedule_time'],
         '--phone', str(task['terminal_phone']),
         '--server-ip', task['server_ip'],
         '--server-port', str(task['server_port'])
@@ -153,7 +154,7 @@ def scheduler_loop(tasks):
 
         if available_slots > 0:
             for task in tasks:
-                if task['_status'] == 'PENDING' and is_time_to_run(task, now):
+                if task['_status'] == 'PENDING':     #  补传直接开始，不再判断时间  and is_time_to_run(task, now):
                     if available_slots <= 0:
                         break
                     start_process(task)
@@ -191,10 +192,10 @@ def main():
     now = datetime.now()
     tasks = load_tasks(now=now)
     if not tasks:
-        logging.info("没有未来任务，退出")
+        logging.info("没有任务或者配置文件的补传日期非历史日期，退出")
         return
 
-    logging.info("任务列表（只显示未来任务）:")
+    logging.info("任务列表（显示补传任务）:")
     for i, t in enumerate(tasks, 1):
         logging.info(f"  {i}. {t['name']} @ {t.get('schedule_time')}")
 
