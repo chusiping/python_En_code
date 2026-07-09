@@ -105,18 +105,14 @@ def parse_jt808_packet(hexstr):
     
 def parse_0900(hexstr):
     result={}
-    # 消息ID
-    msg_id=hexstr[:4]
-    # 跳过消息ID
-    body=hexstr[4:]
-    # 消息体属性
-    body_attr=body[:4]
-    # 手机号
-    phone=body[4:16]
-    # 流水号
-    sn=body[16:20]
-    # 透传数据
-    data=body[20:]
+    msg_id=hexstr[:4]   # 消息ID
+    body=hexstr[4:]     # 跳过消息ID
+    body_attr=body[:4]  # 消息体属性
+    body_len = int(body_attr, 16) & 0x03FF     #  新增这一句 JT808消息体长度(低10位)
+    phone=body[4:16]    # 手机号
+    sn=body[16:20]      # 流水号
+    data = body[20:20 + body_len * 2]      # 透传数据 这里只取消息体，不要把校验码取进来
+
     func_id=data[:2]
     result["消息ID"]="0900"
     result["功能ID"]="0x"+func_id
@@ -127,11 +123,26 @@ def parse_0900(hexstr):
         result["类型"]="车辆故障码"
     elif func_id=="F3":
         result["类型"]="睡眠进入"
+        result.update(parse_f3(payload))
     elif func_id=="F4":
         result["类型"]="睡眠唤醒"
     elif func_id=="F6":
         result["类型"]="MCU升级状态"
     elif func_id=="F7":
         result["类型"]="碰撞报警"
-    result["数据"]=payload
+    # result["数据"]=payload
     return result
+
+
+def parse_f3(payload):
+
+    yy = int(payload[0:2])
+    mm = int(payload[2:4])
+    dd = int(payload[4:6])
+    hh = int(payload[6:8])
+    mi = int(payload[8:10])
+    ss = int(payload[10:12])
+
+    return {
+        "休眠进入时间": f"20{yy:02d}-{mm:02d}-{dd:02d} {hh:02d}:{mi:02d}:{ss:02d}"
+    }
