@@ -87,3 +87,44 @@ def parse_bcd_time(hexstr):
         f"{mi:02d}:"
         f"{ss:02d}"
     )
+
+def parse_u32(hexstr):
+    return int(hexstr,16)
+
+
+def parse_u16(hexstr):
+    return int(hexstr,16)
+
+
+def parse_lat(hexstr):
+
+    value = int(hexstr,16)
+
+    # Bit31方向
+    south = value & 0x80000000
+
+    value &= 0x7FFFFFFF
+
+    lat = value / 1000000
+
+    if south:
+        lat = -lat
+
+    return lat
+
+
+
+def parse_lng(hexstr):
+
+    value = int(hexstr,16)
+
+    west = value & 0x80000000
+
+    value &= 0x7FFFFFFF
+
+    lng=value/1000000
+
+    if west:
+        lng=-lng
+
+    return lng

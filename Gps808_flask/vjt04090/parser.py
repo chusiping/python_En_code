@@ -120,6 +120,7 @@ def parse_0900(hexstr):
     payload=data[2:]
     if func_id=="F1":
         result["类型"]="车辆行程数据"
+        result.update(parse_f1(payload))
     elif func_id=="F2":
         result["类型"]="车辆故障码"
     elif func_id=="F3":
@@ -203,6 +204,185 @@ def parse_f7(data):
         "01":"中度",
         "02":"严重"
     }.get(level,"未知")
+
+
+    return result
+
+
+def parse_f1(payload):
+
+    result={}
+
+
+    while payload:
+
+
+        # 信息ID
+        info_id = payload[:4]
+
+        # 长度
+        length = int(payload[4:6],16)
+
+
+        # 数据
+        value = payload[6:6+length*2]
+
+
+        # 下一组
+        payload = payload[6+length*2:]
+
+
+        if info_id=="0001":
+
+            result["ACC ON时间"] = parse_bcd_time(value)
+
+
+        elif info_id=="0002":
+
+            result["ACC OFF时间"] = parse_bcd_time(value)
+
+
+        elif info_id=="0003":
+
+            result["ACC ON纬度"] = parse_lat(value)
+
+
+        elif info_id=="0004":
+
+            result["ACC ON经度"] = parse_lng(value)
+
+
+        elif info_id=="0005":
+
+            result["ACC OFF纬度"] = parse_lat(value)
+
+
+        elif info_id=="0006":
+
+            result["ACC OFF经度"] = parse_lng(value)
+
+
+        elif info_id=="0007":
+
+            result["驾驶循环标签"] = parse_u16(value)
+
+
+        elif info_id=="0008":
+
+            result["里程类型"] = {
+                "01":"GPS累计里程",
+                "07":"OBD仪表里程",
+                "08":"OBD速度里程"
+            }.get(value,"其他")
+
+
+        elif info_id=="0009":
+
+            result["行程里程(m)"] = parse_u32(value)
+
+
+        elif info_id=="000A":
+
+            result["总耗油(ml)"] = parse_u32(value)
+
+
+        elif info_id=="000B":
+
+            result["行程总时长(s)"] = parse_u32(value)
+
+
+        elif info_id=="000C":
+
+            result["超速时长(s)"] = parse_u16(value)
+
+
+        elif info_id=="000D":
+
+            result["超速次数"] = parse_u16(value)
+
+
+        elif info_id=="000E":
+
+            result["平均速度(km/h)"] = int(value,16)
+
+
+        elif info_id=="000F":
+
+            result["最高速度(km/h)"] = int(value,16)
+
+
+        elif info_id=="0010":
+
+            result["怠速时长(s)"] = parse_u32(value)
+
+
+        elif info_id=="0011":
+
+            result["是否支持刹车统计"] = value=="01"
+
+
+        elif info_id=="0012":
+
+            result["刹车次数"] = parse_u16(value)
+
+
+        elif info_id=="0013":
+
+            result["急加速次数"] = parse_u32(value)
+
+
+        elif info_id=="0014":
+
+            result["急减速次数"] = parse_u32(value)
+
+
+        elif info_id=="0015":
+
+            result["急转弯次数"] = parse_u32(value)
+
+        elif info_id=="0016":
+
+            result["低速里程(<20km/h)(m)"] = parse_u32(value)
+
+
+        elif info_id=="0017":
+
+            result["20-40km/h里程(m)"] = parse_u32(value)
+
+
+        elif info_id=="0018":
+
+            result["40-60km/h里程(m)"] = parse_u32(value)
+
+
+        elif info_id=="0019":
+
+            result["60-80km/h里程(m)"] = parse_u32(value)
+
+
+        elif info_id=="001A":
+
+            result["80-100km/h里程(m)"] = parse_u32(value)
+
+
+        elif info_id=="001B":
+
+            result["100-120km/h里程(m)"] = parse_u32(value)
+
+
+        elif info_id=="001C":
+
+            result[">120km/h里程(m)"] = parse_u32(value)
+
+        elif info_id=="001D":
+
+            result["怠速油耗(ml)"] = parse_u32(value)
+
+
+
+        else:
+
+            result[f"未知_{info_id}"] = value
 
 
     return result
