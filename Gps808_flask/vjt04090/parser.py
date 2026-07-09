@@ -1,4 +1,5 @@
 from codec import *
+import struct
 
 # 第一处修改：增加消息分发 增加一个入口：
 def parse_gps_packet(hexstr: str):
@@ -130,6 +131,7 @@ def parse_0900(hexstr):
         result["类型"]="MCU升级状态"
     elif func_id=="F7":
         result["类型"]="碰撞报警"
+        result.update(parse_f7(payload))
     # result["数据"]=payload
     return result
 
@@ -146,3 +148,61 @@ def parse_f3(payload):
     return {
         "休眠进入时间": f"20{yy:02d}-{mm:02d}-{dd:02d} {hh:02d}:{mi:02d}:{ss:02d}"
     }
+
+def parse_f7(data):
+
+    result={}
+
+
+    # 时间
+    result["碰撞时间"] = parse_bcd_time(
+        data[0:12]
+    )
+
+
+    # 纬度
+    lat = int.from_bytes(
+        bytes.fromhex(data[12:20]),
+        "big"
+    )
+
+    south = lat & 0x80000000
+
+    lat &= 0x7fffffff
+
+    result["纬度"] = lat / 1000000
+
+
+    # 经度
+    lng = int.from_bytes(
+        bytes.fromhex(data[20:28]),
+        "big"
+    )
+
+    west = lng & 0x80000000
+
+    lng &= 0x7fffffff
+
+    result["经度"] = lng / 1000000
+
+
+    # 采样频率
+    freq=int.from_bytes(
+        bytes.fromhex(data[28:36]),
+        "big"
+    )
+
+    result["采样周期(ms)"]=freq
+
+
+    # 碰撞等级
+    level=data[36:38]
+
+    result["碰撞等级"]={
+        "00":"轻微",
+        "01":"中度",
+        "02":"严重"
+    }.get(level,"未知")
+
+
+    return result

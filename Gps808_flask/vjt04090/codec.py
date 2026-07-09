@@ -50,3 +50,40 @@ def phone_to_bcd(phone:str):
 def split_hex(hexstr):
     hexstr = hexstr.replace(" ", "").replace("\n", "")
     return hexstr.upper()
+
+def parse_bcd_time(hexstr):
+    """
+    解析 JT808/VJT BCD[6] 时间
+
+    格式:
+    YY MM DD HH MM SS
+
+    例如:
+    260709154649
+
+    返回:
+    2026-07-09 15:46:49
+    """
+
+    if len(hexstr) != 12:
+        raise ValueError(
+            f"BCD时间长度错误: {hexstr}"
+        )
+
+    yy = int(hexstr[0:2])
+    mm = int(hexstr[2:4])
+    dd = int(hexstr[4:6])
+
+    hh = int(hexstr[6:8])
+    mi = int(hexstr[8:10])
+    ss = int(hexstr[10:12])
+
+
+    return (
+        f"20{yy:02d}-"
+        f"{mm:02d}-"
+        f"{dd:02d} "
+        f"{hh:02d}:"
+        f"{mi:02d}:"
+        f"{ss:02d}"
+    )
