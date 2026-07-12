@@ -123,6 +123,7 @@ def parse_0900(hexstr):
         result.update(parse_f1(payload))
     elif func_id=="F2":
         result["类型"]="车辆故障码"
+        result.update(parse_f2(payload))
     elif func_id=="F3":
         result["类型"]="睡眠进入"
         result.update(parse_f3(payload))
@@ -161,6 +162,46 @@ def parse_8001(body):
         "结果": reply_result,
         "结果说明": result_map.get(reply_result,"未知")
     }
+
+
+def parse_f2(payload):
+
+    result = {}
+
+    # 长度至少要有：时间(6)+纬度(4)+经度(4)+数量(1)=15字节
+    if len(payload) < 30:
+        return {"error": "F2数据长度不足"}
+
+    # 时间
+    result["故障时间"] = parse_bcd_time(payload[0:12])
+
+    # 纬度
+    result["纬度"] = parse_lat(payload[12:20])
+
+    # 经度
+    result["经度"] = parse_lng(payload[20:28])
+
+    # DTC数量
+    dtc_num = int(payload[28:30], 16)
+    result["故障码数量"] = dtc_num
+
+    # DTC列表
+    dtc_list = []
+
+    pos = 30
+    for i in range(dtc_num):
+
+        if pos + 8 > len(payload):
+            break
+
+        dtc = payload[pos:pos + 8]
+        dtc_list.append(dtc)
+
+        pos += 8
+
+    result["故障码"] = dtc_list
+
+    return result
 
 def parse_f3(payload):
 
