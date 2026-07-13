@@ -12,9 +12,9 @@ def parse_0200(hexstr: str):
         return v
     result = []
     # ------- 开始解析 -------
-    result.append((take(2), "起始位"))
+    # result.append((take(2), "起始位"))
     msg_id = take(4)
-    result.append(msg_id, "消息ID")
+    result.append((msg_id, "消息ID"))
     result.append((take(4), "消息体属性"))
     result.append((take(12), "终端手机号（BCD）"))
     result.append((take(4), "流水号"))
@@ -24,32 +24,43 @@ def parse_0200(hexstr: str):
         raise ValueError(
             f"不是0200消息，收到:{msg_id}"
         )
-    # ---- 纬度 ---
-    lat_len = 8
-    if '7D' in hexstr[idx:idx+8] or '7E' in hexstr[idx:idx+8]:
-        lat_len = 10  # 转义了，实际占 5 字节 = 10 hex
-    lat_hex = take(lat_len)
-    result.append((lat_hex, f"纬度 (hex length={lat_len})"))
-    # ---- 经度 ----
-    lng_len = 8
-    if '7D' in hexstr[idx:idx+8] or '7E' in hexstr[idx:idx+8]:
-        lng_len = 10  # 转义了
-    lng_hex = take(lng_len)
-    result.append((lng_hex, f"经度 (hex length={lng_len})"))
+    lat_hex = take(8)
+    result.append((lat_hex, f"纬度)"))
+    lng_hex = take(8)
+    result.append((lng_hex, f"经度"))
     result.append((take(4), "海拔"))
     result.append((take(4), "速度"))
     result.append((take(4), "方向"))
-    result.append((take(12), "时间（BCD）"))
+    result.append((take(12), "时间"))
     # ===== 附加项解析（直到校验在前一个字节，最后一个是7E） =====
-    while idx < len(hexstr) - 4:  # 最后两个字节是 校验 + 7E
-        item_id = take(2)
-        item_len = int(take(2), 16)
-        item_data = take(item_len * 2)
-        result.append((item_id + item_len.to_bytes(1, 'big').hex().upper() + item_data, f"附加项 0x{item_id}"))
+    while idx < len(hexstr)-2:
+        # VJT扩展
+        if hexstr[idx:idx+2]=="30":
+            func_id = take(4)
+            length = int(take(2),16)
+            data = take(length*2)
+            result.append(
+                (
+                    func_id,
+                    data,
+                    "扩展外设"
+                )
+            )
+        else:
+            item_id = take(2)
+            length = int(take(2),16)
+            data = take(length*2)
+            result.append(
+                (
+                    item_id,
+                    data,
+                    "标准附加"
+                )
+            )
     # 校验码
     result.append((take(2), "校验码"))
     # 结束位
-    result.append((take(2), "结束位"))
+    # result.append((take(2), "结束位"))
     return result
 
 def parse_jt808_packet(hexstr):
@@ -62,9 +73,7 @@ def parse_jt808_packet(hexstr):
     # 前4位就是消息ID
     msg_id = hexstr[:4]
     if msg_id == "0200":
-        return parse_0200(
-            "7E" + hexstr + "7E"
-        )
+        return parse_0200(hexstr)
     elif msg_id == "0900":
         return parse_0900(hexstr)
     elif msg_id == "8001":
@@ -589,4 +598,91 @@ def parse_3014_io_status(byte, names, output=False):
         )
     return result
 
-
+def parse_ea(hexstr: str):
+    """
+    VJT基础数据流 EA解析
+    格式:
+    功能ID(2byte) + 长度(1byte) + 数据(Nbyte)
+    输入:
+        000305010570B9B70004050F036E5D54
+    返回:
+        [
+            {
+                "id":"0003",
+                "name":"总里程数据",
+                "length":5,
+                "data":"010570B9B7"
+            }
+        ]
+    """
+    hexstr = split_hex(hexstr)
+    idx = 0
+    result = []
+    # 功能ID定义
+    func_map = {
+        "0001": "预留",
+        "0002": "预留",
+        "0003": "总里程数据",
+        "0004": "总油耗/总电耗",
+        "0005": "总运行时长",
+        "0006": "总熄火时长",
+        "0007": "总怠速时长",
+        "0008": "里程数据表",
+        "0009": "油耗数据表",
+        "0010": "加速度表",
+        "0011": "车辆状态表",
+        "0012": "车辆电压",
+        "0013": "终端内置电池电压",
+        "0014": "CSQ值",
+        "0015": "车型ID",
+        "0016": "OBD协议类型",
+        "0017": "驾驶循环标签",
+        "0018": "GPS收星数",
+        "0019": "GPS位置精度",
+        "001A": "GPS平均信噪比",
+        "001B": "GPS天线状态",
+        "001D": "设备拔出状态",
+        "001E": "累计里程",
+        "001F": "瞬时油耗",
+        "0020": "点火类型",
+        "0021": "碳排放量",
+        "0022": "Roll角速度",
+        "0023": "Pitch角速度",
+        "0024": "Yaw角速度",
+        "0025": "累计里程2",
+        "0026": "输入状态",
+        "0027": "GPS定位解状态",
+        "0028": "设备运行时间",
+        "0029": "空调状态表",
+    }
+    while idx < len(hexstr):
+        # 功能ID
+        func_id = hexstr[idx:idx+4]
+        idx += 4
+        if idx + 2 > len(hexstr):
+            raise ValueError(
+                f"EA长度字段缺失 func={func_id}"
+            )
+        # 数据长度 byte
+        length = int(
+            hexstr[idx:idx+2],
+            16
+        )
+        idx += 2
+        # 数据
+        data = hexstr[
+            idx:idx+length*2
+        ]
+        idx += length*2
+        result.append(
+            {
+                "id": func_id,
+                "name": func_map.get(
+                    func_id,
+                    "未知功能"
+                ),
+                "length": length,
+                "data": data
+            }
+        )
+    return result
