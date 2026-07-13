@@ -453,45 +453,31 @@ def parse_f1(payload):
 
     return result
 
-# parse_0200() 遇到对应的外设扩展信息时，只需要调用：
+# 扩展外设数据流不是一个独立的 JT808 消息包，它通常是挂在某个 JT808 消息里面的附加数据。
+# 0200 消息里面有附加信息
 def parse_external_441(payload):
-
     result = {}
-
     while len(payload) >= 6:
-
         func_id = payload[:4]
-
         length = int(payload[4:6], 16)
-
         value = payload[6:6 + length * 2]
-
         payload = payload[6 + length * 2:]
-
         if func_id == "3001":
             result["正反转状态"] = parse_3001(value)
-
         elif func_id == "3002":
             result["探头温度1"] = parse_3002(value)
-
         elif func_id == "3003":
             result["探头温度2"] = parse_3002(value)
-
         elif func_id == "3004":
             result["探头温度3"] = parse_3002(value)
-
         elif func_id == "3005":
             result["探头温度4"] = parse_3002(value)
-
         elif func_id == "300D":
             result["温度传感器"] = parse_300D(value)
-
         elif func_id == "3013":
             result["G-Sensor"] = parse_3013(value)
-
         else:
             result[f"未知_{func_id}"] = value
-
     return result
 
 def parse_3001(value):  #   3001 正反转
@@ -528,13 +514,108 @@ def parse_300D(value):
     return value
 def parse_3013(value):
     return {
-        "Total":parse_s16(value[0:4]),
-        "X":parse_s16(value[4:8]),
-        "Y":parse_s16(value[8:12]),
-        "Z":parse_s16(value[12:16])
+        "Total":parse_3013_s16(value[0:4]),
+        "X":parse_3013_s16(value[4:8]),
+        "Y":parse_3013_s16(value[8:12]),
+        "Z":parse_3013_s16(value[12:16])
     }
-def parse_s16(hexstr):
+def parse_3013_s16(hexstr):
     value=int(hexstr,16)
     if value>=0x8000:
         value-=0x10000
     return value
+def parse_3014(value):
+    result={}
+    # hex字符串转bytes
+    data = bytes.fromhex(value)
+    if len(data)<5:
+        return {
+            "error":"3014长度不足"
+        }
+    # 输入
+    input_names=[
+        "IN1",
+        "IN2",
+        "IN3",
+        "IN4",
+        "IN5",
+        "IN6",
+        "IN7",
+        "IN8"
+    ]
+    result["输入状态"]={}
+    result["输入状态"].update(
+        parse_3014_io_status(
+            data[0],
+            input_names[0:4],
+            False
+        )
+    )
+    result["输入状态"].update(
+        parse_3014_io_status(
+            data[1],
+            input_names[4:8],
+            False
+        )
+    )
+    # 输出
+    output_names=[
+        "OUT1",
+        "OUT2",
+        "OUT3",
+        "OUT4",
+        "OUT5",
+        "OUT6",
+        "5V_OUT1",
+        "5V_OUT2",
+        "12V_OUT"
+    ]
+    result["输出状态"]={}
+    result["输出状态"].update(
+        parse_3014_io_status(
+            data[2],
+            output_names[0:4],
+            True
+        )
+    )
+    result["输出状态"].update(
+        parse_3014_io_status(
+            data[3],
+            output_names[4:8],
+            True
+        )
+    )
+    result["输出状态"].update(
+        parse_3014_io_status(
+            data[4],
+            output_names[8:9],
+            True
+        )
+    )
+    return result
+#3014 输入输出状态表
+def parse_3014_io_status(byte, names, output=False):
+    result = {}
+    status_map_input = {
+        0:"不支持",
+        1:"高电平",
+        2:"低电平",
+        3:"保留"
+    }
+    status_map_output = {
+        0:"不支持",
+        1:"高电平",
+        2:"低电平",
+        3:"悬空"
+    }
+    status_map = status_map_output if output else status_map_input
+    for i,name in enumerate(names):
+        # 每两个bit一个状态
+        value = (byte >> (i*2)) & 0x03
+        result[name] = status_map.get(
+            value,
+            "未知"
+        )
+    return result
+
+
