@@ -452,3 +452,89 @@ def parse_f1(payload):
 
 
     return result
+
+# parse_0200() 遇到对应的外设扩展信息时，只需要调用：
+def parse_external_441(payload):
+
+    result = {}
+
+    while len(payload) >= 6:
+
+        func_id = payload[:4]
+
+        length = int(payload[4:6], 16)
+
+        value = payload[6:6 + length * 2]
+
+        payload = payload[6 + length * 2:]
+
+        if func_id == "3001":
+            result["正反转状态"] = parse_3001(value)
+
+        elif func_id == "3002":
+            result["探头温度1"] = parse_3002(value)
+
+        elif func_id == "3003":
+            result["探头温度2"] = parse_3002(value)
+
+        elif func_id == "3004":
+            result["探头温度3"] = parse_3002(value)
+
+        elif func_id == "3005":
+            result["探头温度4"] = parse_3002(value)
+
+        elif func_id == "300D":
+            result["温度传感器"] = parse_300D(value)
+
+        elif func_id == "3013":
+            result["G-Sensor"] = parse_3013(value)
+
+        else:
+            result[f"未知_{func_id}"] = value
+
+    return result
+
+def parse_3001(value):  #   3001 正反转
+    status = int(value,16)
+    return {
+        0:"停转",
+        1:"正转",
+        2:"反转"
+    }.get(status,"未知")
+def parse_3002(value):  #   3002~3005 温度
+    temp = int(value,16)
+    return temp / 10 - 40
+def parse_300D(value):
+    if len(value)==4:
+        temp=int(value,16)/10-40
+        return {
+            "温度":temp
+        }
+    elif len(value)==16:
+        temp=int(value[0:4],16)/10-40
+        hum=int(value[4:8],16)/10
+        volt=int(value[8:12],16)/100
+        tamper=value[12:14]
+        signal=int(value[14:16],16)
+        if signal>=128:
+            signal-=256
+        return {
+            "温度":temp,
+            "湿度":hum,
+            "电压":volt,
+            "拆卸":"未拆卸" if tamper=="FF" else "已拆卸",
+            "信号":signal
+        }
+    return value
+def parse_3013(value):
+    return {
+        "Total":parse_s16(value[0:4]),
+        "X":parse_s16(value[4:8]),
+        "Y":parse_s16(value[8:12]),
+        "Z":parse_s16(value[12:16])
+    }
+def parse_s16(hexstr):
+    value=int(hexstr,16)
+    if value>=0x8000:
+        value-=0x10000
+    return value
