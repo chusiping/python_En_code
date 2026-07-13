@@ -29,7 +29,8 @@ if __name__ == "__main__":
     f8001_应答流水号 = """7E 80 01 00 05 01 87 61 24 19 44 00 06 2B 01 02 00 00 34 7E"""
 
 
-    result = parse_jt808_packet(f2_车辆故障码)
+    result = parse_jt808_packet(f1_驾驶行程)
+    print(f1_驾驶行程)
     print(result)
 
 
