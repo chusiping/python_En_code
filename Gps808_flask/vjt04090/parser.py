@@ -44,7 +44,7 @@ def parse_0200(hexstr: str):
     # =========================
     body_attr = take(4)
     body_len = int(body_attr,16) & 0x03FF
-    result["基础信息"]["消息体属性"] = body_attr
+    # result["基础信息"]["消息体属性"] = body_attr 不显示
     result["基础信息"]["消息体长度"] = body_len
     # =========================
     # 计算消息体结束位置
@@ -61,7 +61,7 @@ def parse_0200(hexstr: str):
     result["基础信息"]["手机号"] = phone
     # 流水号
     serial = take(4)
-    result["基础信息"]["流水号"] = serial
+    result["基础信息"]["流水号"] = int(serial,16) 
     # =========================
     # 报警标志
     # =========================
