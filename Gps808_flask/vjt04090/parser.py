@@ -65,8 +65,11 @@ def parse_0200(hexstr: str):
     # =========================
     # 报警标志
     # =========================
+    # alarm = take(8)
+    # result["基础信息"]["报警标志"] = alarm  #取消显示
     alarm = take(8)
     result["基础信息"]["报警标志"] = alarm
+    result["基础信息"]["报警内容"] = parse_alarm_flag(alarm)
     # 状态
     status = take(8)
     result["基础信息"]["状态"] = status
@@ -113,7 +116,7 @@ def parse_0200(hexstr: str):
         # VJT扩展外设
         # 3001-4FFF
         # ---------------------
-        if len(remain) >= 6:
+        if len(remain) >= 6:    #判断剩余的数据长度是否至少有 6 个十六进制字符
             func_id = int(remain[:4],16)
             if 0x3001 <= func_id <= 0x4FFF:
                 func_id_hex = take(4)
@@ -143,9 +146,11 @@ def parse_0200(hexstr: str):
                 "类型":"JT808标准附加",
                 "ID":item_id,
                 "长度":length,
-                "数据":value
+                "数据":parse_ea(value)
             }
         )
+    # 校验码
+    result["校验码"] = take(2)
     return result
 def parse_jt808_packet(hexstr):
     hexstr = split_hex(hexstr)
@@ -681,7 +686,7 @@ def parse_3014_io_status(byte, names, output=False):
             "未知"
         )
     return result
-
+# 0xEA T808标准附加信息ID
 def parse_ea(hexstr: str):
     """
     VJT基础数据流 EA解析
@@ -778,3 +783,42 @@ def is_vjt_external(hexstr):
         return False
     func_id = int(hexstr[:4],16)
     return VJT_EXT_START <= func_id <= VJT_EXT_END
+# 解析JT808报警标志位
+def parse_alarm_flag(hexstr):
+    """
+    解析JT808报警标志位
+    参数:
+        hexstr:
+            4字节HEX字符串
+            例如:
+            "00000001"
+    返回:
+        报警列表
+    """
+    alarm_map = {
+        0: "紧急报警",
+        1: "超速报警",
+        2: "疲劳驾驶",
+        3: "危险预警",
+        4: "GNSS模块故障",
+        5: "GNSS天线未接或被剪断",
+        6: "GNSS天线短路",
+        7: "终端主电源欠压",
+        8: "终端主电源掉电",
+        9: "终端LCD或显示器故障",
+        10: "TTS模块故障",
+        11: "摄像头故障",
+        12: "保留"
+    }
+    # HEX转整数
+    flag = int(hexstr,16)
+    result = []
+    for bit, desc in alarm_map.items():
+        if flag & (1 << bit):
+            result.append(
+                {
+                    "bit":bit,
+                    "报警":desc
+                }
+            )
+    return result
