@@ -43,9 +43,9 @@ def parse_0200(hexstr: str):
     # 消息体属性
     # =========================
     body_attr = take(4)
-    body_len = int(body_attr,16) & 0x03FF
+    body_len = int(body_attr,16) & 0x03FF  
     # result["基础信息"]["消息体属性"] = body_attr 不显示
-    result["基础信息"]["消息体长度"] = body_len
+    result["基础信息"]["消息体长度"] = body_len #流水号后开始到检验码前结束的部分
     # =========================
     # 计算消息体结束位置
     # =========================
@@ -83,14 +83,8 @@ def parse_0200(hexstr: str):
     lng_flag = "西经" if lng & 0x80000000 else "东经"
     lat_value = (lat & 0x7FFFFFFF) / 1000000
     lng_value = (lng & 0x7FFFFFFF) / 1000000
-    result["基础信息"]["纬度"] = {
-        "方向":lat_flag,
-        "值":lat_value
-    }
-    result["基础信息"]["经度"] = {
-        "方向":lng_flag,
-        "值":lng_value
-    }
+    result["基础信息"]["纬度"] = lat_value
+    result["基础信息"]["经度"] = lng_value
     # =========================
     # 高程
     # =========================
