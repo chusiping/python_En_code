@@ -15,7 +15,14 @@ def parse_0200(hexstr: str):
     # result.append((take(2), "起始位"))
     msg_id = take(4)
     result.append((msg_id, "消息ID"))
-    result.append((take(4), "消息体属性"))
+    # ==============消息体属性================
+    # result.append((take(4), "消息体属性")) 取消
+    body_attr = take(4)
+    result.append(
+        (body_attr,"消息体属性")
+    )
+    body_len = int(body_attr,16) & 0x03FF
+    # =======================================
     result.append((take(12), "终端手机号（BCD）"))
     result.append((take(4), "流水号"))
     result.append((take(8), "报警标志"))
@@ -33,29 +40,29 @@ def parse_0200(hexstr: str):
     result.append((take(4), "方向"))
     result.append((take(12), "时间"))
     # ===== 附加项解析（直到校验在前一个字节，最后一个是7E） =====
-    while idx < len(hexstr)-2:
-        # VJT扩展
-        if hexstr[idx:idx+2]=="30":
+    while idx < len(hexstr):
+        # 判断是否VJT扩展
+        if is_vjt_external(hexstr[idx:idx+4]):
             func_id = take(4)
             length = int(take(2),16)
-            data = take(length*2)
+            value = take(length*2)
             result.append(
-                (
-                    func_id,
-                    data,
-                    "扩展外设"
-                )
+                {
+                    "类型":"扩展外设",
+                    "ID":func_id,
+                    "数据":value
+                }
             )
         else:
             item_id = take(2)
             length = int(take(2),16)
-            data = take(length*2)
+            value = take(length*2)
             result.append(
-                (
-                    item_id,
-                    data,
-                    "标准附加"
-                )
+                {
+                    "类型":"标准附加",
+                    "ID":item_id,
+                    "数据":value
+                }
             )
     # 校验码
     result.append((take(2), "校验码"))
@@ -686,3 +693,11 @@ def parse_ea(hexstr: str):
             }
         )
     return result
+#判断 "标准附加信息" 还是 "扩展外设数据
+VJT_EXT_START = 0x3001
+VJT_EXT_END = 0x4FFF
+def is_vjt_external(hexstr):
+    if len(hexstr) < 4:
+        return False
+    func_id = int(hexstr[:4],16)
+    return VJT_EXT_START <= func_id <= VJT_EXT_END
