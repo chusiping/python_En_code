@@ -3,73 +3,150 @@ import struct
 
 # 第一处修改：增加消息分发 增加一个入口：
 def parse_0200(hexstr: str):
+    """
+    JT/T 808 0200 位置信息汇报
+    支持 VJT.04.090 扩展外设数据
+
+    输入:
+        已经去掉空格的HEX字符串
+        包含:
+        0200消息头 + 消息体
+
+    注意:
+        进入本函数前应该已经完成:
+        7E去除
+        7D转义恢复
+        XOR校验
+    """
     hexstr = split_hex(hexstr) #去空格去换行转大写
-    idx = 0
     def take(n):
         nonlocal idx
-        v = hexstr[idx:idx+n]
+        value = hexstr[idx:idx+n]
         idx += n
-        return v
-    result = []
-    # ------- 开始解析 -------
-    # result.append((take(2), "起始位"))
+        return value
+    result = {
+        "消息ID": "",
+        "基础信息": {},
+        "附加信息": []
+    }
+    idx = 0
+    # =========================
+    # 消息ID
+    # =========================
     msg_id = take(4)
-    result.append((msg_id, "消息ID"))
-    # ==============消息体属性================
-    # result.append((take(4), "消息体属性")) 取消
-    body_attr = take(4)
-    result.append(
-        (body_attr,"消息体属性")
-    )
-    body_len = int(body_attr,16) & 0x03FF
-    # =======================================
-    result.append((take(12), "终端手机号（BCD）"))
-    result.append((take(4), "流水号"))
-    result.append((take(8), "报警标志"))
-    result.append((take(8), "状态"))
     if msg_id != "0200":
         raise ValueError(
-            f"不是0200消息，收到:{msg_id}"
+            f"不是0200消息:{msg_id}"
         )
-    lat_hex = take(8)
-    result.append((lat_hex, f"纬度)"))
-    lng_hex = take(8)
-    result.append((lng_hex, f"经度"))
-    result.append((take(4), "海拔"))
-    result.append((take(4), "速度"))
-    result.append((take(4), "方向"))
-    result.append((take(12), "时间"))
-    # ===== 附加项解析（直到校验在前一个字节，最后一个是7E） =====
-    while idx < len(hexstr):
-        # 判断是否VJT扩展
-        if is_vjt_external(hexstr[idx:idx+4]):
-            func_id = take(4)
-            length = int(take(2),16)
-            value = take(length*2)
-            result.append(
-                {
-                    "类型":"扩展外设",
-                    "ID":func_id,
-                    "数据":value
-                }
-            )
-        else:
-            item_id = take(2)
-            length = int(take(2),16)
-            value = take(length*2)
-            result.append(
-                {
-                    "类型":"标准附加",
-                    "ID":item_id,
-                    "数据":value
-                }
-            )
-    # 校验码
-    result.append((take(2), "校验码"))
-    # 结束位
-    # result.append((take(2), "结束位"))
+    result["消息ID"] = msg_id
+    # =========================
+    # 消息体属性
+    # =========================
+    body_attr = take(4)
+    body_len = int(body_attr,16) & 0x03FF
+    result["基础信息"]["消息体属性"] = body_attr
+    result["基础信息"]["消息体长度"] = body_len
+    # =========================
+    # 计算消息体结束位置
+    # =========================
+    body_start = idx
+    body_end = body_start + body_len * 2
+    # 防止异常数据
+    if body_end > len(hexstr):
+        body_end = len(hexstr)
+    # =========================
+    # 终端手机号
+    # =========================
+    phone = take(12)
+    result["基础信息"]["手机号"] = phone
+    # 流水号
+    serial = take(4)
+    result["基础信息"]["流水号"] = serial
+    # =========================
+    # 报警标志
+    # =========================
+    alarm = take(8)
+    result["基础信息"]["报警标志"] = alarm
+    # 状态
+    status = take(8)
+    result["基础信息"]["状态"] = status
+    # =========================
+    # 经纬度
+    # =========================
+    lat = int(take(8),16)
+    lng = int(take(8),16)
+    # Bit31方向
+    lat_flag = "南纬" if lat & 0x80000000 else "北纬"
+    lng_flag = "西经" if lng & 0x80000000 else "东经"
+    lat_value = (lat & 0x7FFFFFFF) / 1000000
+    lng_value = (lng & 0x7FFFFFFF) / 1000000
+    result["基础信息"]["纬度"] = {
+        "方向":lat_flag,
+        "值":lat_value
+    }
+    result["基础信息"]["经度"] = {
+        "方向":lng_flag,
+        "值":lng_value
+    }
+    # =========================
+    # 高程
+    # =========================
+    altitude = int(take(4),16)
+    result["基础信息"]["海拔"] = altitude
+    # 速度
+    speed = int(take(4),16)
+    result["基础信息"]["速度"] = speed / 10
+    # 方向
+    direction = int(take(4),16)
+    result["基础信息"]["方向"] = direction
+    # 时间
+    time_bcd = take(12)
+    result["基础信息"]["时间"] = parse_bcd_time(time_bcd)
+    # =========================
+    # 附加信息解析
+    # =========================
+    while idx < body_end:
+        remain = hexstr[idx:body_end]
+        if len(remain) < 2:
+            break
+        # ---------------------
+        # VJT扩展外设
+        # 3001-4FFF
+        # ---------------------
+        if len(remain) >= 6:
+            func_id = int(remain[:4],16)
+            if 0x3001 <= func_id <= 0x4FFF:
+                func_id_hex = take(4)
+                length = int(take(2),16)
+                value = take(length*2)
+                result["附加信息"].append(
+                    {
+                        "类型":"VJT扩展外设",
+                        "ID":func_id_hex,
+                        "长度":length,
+                        "数据":value
+                    }
+                )
+                continue
+        # ---------------------
+        # JT808标准附加信息
+        # ID 1字节
+        # LEN 1字节
+        # ---------------------
+        item_id = take(2)
+        if idx + 2 > body_end:
+            break
+        length = int(take(2),16)
+        value = take(length*2)
+        result["附加信息"].append(
+            {
+                "类型":"JT808标准附加",
+                "ID":item_id,
+                "长度":length,
+                "数据":value
+            }
+        )
     return result
-
 def parse_jt808_packet(hexstr):
     hexstr = split_hex(hexstr)
     # 去掉7E
