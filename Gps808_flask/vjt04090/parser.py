@@ -39,32 +39,24 @@ def parse_0200(hexstr: str):
             f"不是0200消息:{msg_id}"
         )
     result["消息ID"] = msg_id
-    # =========================
-    # 消息体属性
-    # =========================
+    # ==========消息体属性===============
     body_attr = take(4)
-    body_len = int(body_attr,16) & 0x03FF  
+    body_len = int(body_attr,16) & 0x03FF  #n个字节 JT808消息体长度 body_len，不包含手机号和流水号
     # result["基础信息"]["消息体属性"] = body_attr 不显示
     result["基础信息"]["消息体长度"] = body_len #流水号后开始到检验码前结束的部分
-    # =========================
-    # 计算消息体结束位置
-    # =========================
-    body_start = idx
+    # ==========终端手机号===============
+    phone = take(12)
+    result["基础信息"]["手机号"] = phone
+    # ==========流水号===============
+    serial = take(4)
+    result["基础信息"]["流水号"] = int(serial,16) 
+    # ===========计算消息体结束位置==============
+    body_start = idx  #已经跳过：消息ID 4字符 消息体属性 4字符
     body_end = body_start + body_len * 2
     # 防止异常数据
     if body_end > len(hexstr):
         body_end = len(hexstr)
-    # =========================
-    # 终端手机号
-    # =========================
-    phone = take(12)
-    result["基础信息"]["手机号"] = phone
-    # 流水号
-    serial = take(4)
-    result["基础信息"]["流水号"] = int(serial,16) 
-    # =========================
-    # 报警标志
-    # =========================
+    # ===========报警标志==============
     # alarm = take(8)
     # result["基础信息"]["报警标志"] = alarm  #取消显示
     alarm = take(8)
@@ -140,7 +132,7 @@ def parse_0200(hexstr: str):
                 "类型":"JT808标准附加",
                 "ID":item_id,
                 "长度":length,
-                "数据":parse_ea(value)
+                "数据":parse_external_441(value) # parse_ea(value) #parse_external_441(value)
             }
         )
     # 校验码
@@ -539,6 +531,8 @@ def parse_external_441(payload):
             result["温度传感器"] = parse_300D(value)
         elif func_id == "3013":
             result["G-Sensor"] = parse_3013(value)
+        elif func_id == "3014":
+            result["输入和输出状态"] = parse_3014(value)      #0x3014	输入和输出状态
         else:
             result[f"未知_{func_id}"] = value
     return result
@@ -680,7 +674,7 @@ def parse_3014_io_status(byte, names, output=False):
             "未知"
         )
     return result
-# 0xEA T808标准附加信息ID
+# 4.32   附表 位置数据信息体 --->  4.35   附表 位置附加信息表 ---> 4.36   附表 附加信息定义 ---> 0xEA T808标准附加信息ID  ---> 4.37  附表 基础数据流
 def parse_ea(hexstr: str):
     """
     VJT基础数据流 EA解析
