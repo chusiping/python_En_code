@@ -52,10 +52,15 @@ def parse_0200(hexstr: str):
     result["基础信息"]["流水号"] = int(serial,16) 
     # ===========计算消息体结束位置==============
     body_start = idx  #已经跳过：消息ID 4字符 消息体属性 4字符
-    body_end = body_start + body_len * 2
+    body_end = body_start + body_len * 2  # 消息体结束的位置，如果不出错就是427E验证码之前
     # 防止异常数据
     if body_end > len(hexstr):
         body_end = len(hexstr)
+    print("body_start", body_start)
+    print("body_end", body_end)
+    print("body_len", body_len)
+    print(f"body长度 ({body_end}-{body_start})/2 = ", (body_end-body_start)//2)
+
     # ===========报警标志==============
     # alarm = take(8)
     # result["基础信息"]["报警标志"] = alarm  #取消显示
@@ -95,7 +100,7 @@ def parse_0200(hexstr: str):
     # 附加信息解析
     # =========================
     while idx < body_end:
-        remain = hexstr[idx:body_end]
+        remain = hexstr[idx:body_end]   #日期之后开始到消息体结束 = 所有附加信息
         if len(remain) < 2:
             break
         # ---------------------
@@ -127,14 +132,20 @@ def parse_0200(hexstr: str):
             break
         length = int(take(2),16)
         value = take(length*2)
-        result["附加信息"].append(
-            {
-                "类型":"JT808标准附加",
-                "ID":item_id,
-                "长度":length,
-                "数据":parse_external_441(value) # parse_ea(value) #parse_external_441(value)
-            }
-        )
+        
+        att_info = parse_0xE1_0xFD(item_id,length,value)
+        result["附加信息"].append(att_info)
+
+        # result["附加信息"].append(   # 暂时不用，用上一行代替
+        #     {
+        #         "类型":"JT808标准附加",
+        #         "ID":item_id,
+        #         "长度":length,
+        #         "数据":parse_external_441(value) # parse_ea(value) #parse_external_441(value)
+        #     }
+        # )
+
+
     # 校验码
     result["校验码"] = take(2)
     return result
@@ -913,3 +924,84 @@ def parse_status_flag(hexstr):
             }
         )
     return result
+
+# 4.36   附表 附加信息定义 0xE1 -- 0xFD 10个解析
+def parse_0xE1_0xFD(id,length,data):
+    ATTACH_PARSER = {
+        "E1": {
+            "name": "转速",
+            "parser": parse_e1
+        },
+        "EA": {
+            "name": "基础数据流",
+            "parser": parse_ea
+        },
+        "EB": {
+            "name": "轿车扩展数据流",
+            "parser": parse_eb
+        },
+        "EC": {
+            "name": "货车扩展数据流",
+            "parser": parse_ec
+        },
+        "ED": {
+            "name": "新能源汽车数据",
+            "parser": parse_ed
+        },
+        "EE": {
+            "name": "扩展外设数据",
+            "parser": parse_ee
+        },
+        "FA": {
+            "name": "报警命令",
+            "parser": parse_fa
+        },
+        "FB": {
+            "name": "基站数据流",
+            "parser": parse_fb
+        },
+        "FC": {
+            "name": "WIFI数据流",
+            "parser": parse_fc
+        },
+        "FD": {
+            "name": "0205数据",
+            "parser": parse_fd
+        }
+    }
+    result = {}
+    info = ATTACH_PARSER.get(id)
+    if info:
+        parser = info["parser"]
+        # 调用对应解析函数
+        detail = parser(data)
+    else:
+        detail = {
+            "原始数据": data
+        }
+    result = {
+        "ID": id,
+        "类型": info["name"] if info else "未知附加信息",
+        "长度": length,
+        "数据": detail
+    }
+    return result
+
+def parse_e1(data):
+    return {}
+def parse_eb(data):
+    return {}
+def parse_ec(data):
+    return {}
+def parse_ed(data):
+    return {}
+def parse_ee(data):
+    return {}
+def parse_fa(data):
+    return {}
+def parse_fb(data):
+    return {}
+def parse_fc(data):
+    return {}
+def parse_fd(data):
+    return {}
