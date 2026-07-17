@@ -519,9 +519,8 @@ def parse_f1(payload):
 
     return result
 
-# 扩展外设数据流不是一个独立的 JT808 消息包，它通常是挂在某个 JT808 消息里面的附加数据。
-# 0200 消息里面有附加信息
-def parse_external_441(payload):
+# 4.32   附表_位置数据信息体 --->  4.36   附表_附加信息定义EE ---> 4.41   附表 扩展外设数据流
+def parse_ee(payload):
     result = {}
     while len(payload) >= 6:
         func_id = payload[:4]
@@ -994,8 +993,6 @@ def parse_eb(data):
 def parse_ec(data):
     return {}
 def parse_ed(data):
-    return {}
-def parse_ee(data):
     return {}
 def parse_fa(data):
     return {}
