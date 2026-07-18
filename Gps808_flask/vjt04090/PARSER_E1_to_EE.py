@@ -22,20 +22,16 @@ def parse_ea_0001(data):
     return {}
 def parse_ea_0002(data):
     return {}
-
-
-
-# 4.45   附表_基础数据项：总里程格式表 
+# 4.45   附表_基础数据项：总里程格式表 不完善
 def parse_ea_0003(data):
     if len(data) < 10:
         return {
             "错误": "总里程数据长度不足"
         }
     mileage_type = data[0:2]
-    mileage = int.from_bytes(
-        bytes.fromhex(data[2:10]),
-        "big"
-    )
+    mileage_hex = data[2:10]
+    mileage = int(mileage_hex, 16)
+
     type_map = {
         "01": "GPS总里程(累计)",
         "02": "J1939里程算法1",
@@ -59,98 +55,6 @@ def parse_ea_0003(data):
         "总里程": mileage,
         "单位": "米"
     }
-
-
-
-
-def parse_ea(hexstr: str):
-    hexstr = split_hex(hexstr)
-    idx = 0
-    result = []
-    EA_PARSER = {
-        "0001": {
-            "name": "ACC ON时间",
-            "parser": parse_ea_0001
-        },
-        "0002": {
-            "name": "ACC OFF时间",
-            "parser": parse_ea_0002
-        },
-        "0003": {
-            "name": "总里程数据",
-            "parser": parse_ea_0003
-        }
-    }
-    # 功能ID定义
-    func_map = {
-        "0001": "预留",
-        "0002": "预留",
-        "0003": "总里程数据",
-        "0004": "总油耗/总电耗",
-        "0005": "总运行时长",
-        "0006": "总熄火时长",
-        "0007": "总怠速时长",
-        "0008": "里程数据表",
-        "0009": "油耗数据表",
-        "0010": "加速度表",
-        "0011": "车辆状态表",
-        "0012": "车辆电压",
-        "0013": "终端内置电池电压",
-        "0014": "CSQ值",
-        "0015": "车型ID",
-        "0016": "OBD协议类型",
-        "0017": "驾驶循环标签",
-        "0018": "GPS收星数",
-        "0019": "GPS位置精度",
-        "001A": "GPS平均信噪比",
-        "001B": "GPS天线状态",
-        "001D": "设备拔出状态",
-        "001E": "累计里程",
-        "001F": "瞬时油耗",
-        "0020": "点火类型",
-        "0021": "碳排放量",
-        "0022": "Roll角速度",
-        "0023": "Pitch角速度",
-        "0024": "Yaw角速度",
-        "0025": "累计里程2",
-        "0026": "输入状态",
-        "0027": "GPS定位解状态",
-        "0028": "设备运行时间",
-        "0029": "空调状态表",
-    }
-    while idx < len(hexstr):
-        # 功能ID
-        func_id = hexstr[idx:idx+4]
-        idx += 4
-        if idx + 2 > len(hexstr):
-            raise ValueError(
-                f"EA长度字段缺失 func={func_id}"
-            )
-        # 数据长度 byte
-        length = int(
-            hexstr[idx:idx+2],
-            16
-        )
-        idx += 2
-        # 数据
-        data = hexstr[
-            idx:idx+length*2
-        ]
-        idx += length*2
-        result.append(
-            {
-                "id": func_id,
-                "name": func_map.get(
-                    func_id,
-                    "未知功能"
-                ),
-                "length": length,
-                "data": data
-            }
-        )
-    return result
-
-
 
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
@@ -319,68 +223,16 @@ def parse_ee(payload):
             result[f"未知_{func_id}"] = value
     return result
 
-
-
-MILEAGE_MAP={
-    "01":{
-        "name":"GPS总里程(累计)",
-        "parser":parse_ea_0003
-    },
-    "02":{
-        "name":"J1939里程算法1",
-        "parser":parse_ea_0003
-    },
-    "03":{
-        "name":"J1939里程算法2",
-        "parser":parse_ea_0003
-    },
-    "04":{
-        "name":"J1939里程算法3",
-        "parser":parse_ea_0003
-    },
-    "05":{
-        "name":"J1939里程算法4",
-        "parser":parse_ea_0003
-    },
-    "06":{
-        "name":"J1939里程算法5",
-        "parser":parse_ea_0003
-    },
-    "07":{
-        "name":"OBD仪表里程",
-        "parser":parse_ea_0003
-    },
-    "08":{
-        "name":"OBD速度里程",
-        "parser":parse_ea_0003
-    },
-    "09":{
-        "name":"J1939里程算法6",
-        "parser":parse_ea_0003
-    },
-    "0A":{
-        "name":"J1939里程算法7",
-        "parser":parse_ea_0003
-    },
-    "0B":{
-        "name":"J1939里程算法8",
-        "parser":parse_ea_0003
-    },
-    "0C":{
-        "name":"J1939里程算法9",
-        "parser":parse_ea_0003
-    }
-}
-
+"""函数parse_tlv里是截取 3部分: id 长度 数据，
+   parse_ea_0003 的总里程，它是两部分 ，类型和米数，于是数据错了 出现 if len(data) < 10 
+   解决方法：使用 "parser":parse_ea_0003 直接调用函数
+   """
 EA_解析EA下的所有ID = {
     "0001":{ "name":"预留", "parser":None },
     "0002":{ "name":"预留", "parser":None },
     "0003":{
         "name":"总里程",
-        "children":{
-            "id_bytes":1,
-            "map":MILEAGE_MAP
-        }
+        "parser":parse_ea_0003 
     },
     "0004":{ "name":"总油耗/总电耗", "parser":None },
     "0005":{ "name":"总运行时长", "parser":None },

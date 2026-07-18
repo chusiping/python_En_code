@@ -164,7 +164,7 @@ def parse_0200(hexstr: str):
         #         "类型":"JT808标准附加",
         #         "ID":item_id,
         #         "长度":length,
-        #         "数据":parse_external_441(value) # parse_ea(value) #parse_external_441(value)
+        #         "数据":parse_external_441(value) 
         #     }
         # )
 
