@@ -1,5 +1,7 @@
 from codec import *
 
+
+
 def parse_e1(data):
     return {}
 def parse_eb(data):
@@ -317,15 +319,75 @@ def parse_ee(payload):
             result[f"未知_{func_id}"] = value
     return result
 
+
+
+MILEAGE_MAP={
+    "01":{
+        "name":"GPS总里程",
+        "parser":parse_ea_0003
+    },
+    "02":{
+        "name":"J1939里程",
+        "parser":parse_ea_0003
+    }
+}
+
+EA_MAP = {
+    "0001":{ "name":"预留", "parser":None },
+    "0002":{ "name":"预留", "parser":None },
+    "0003":{
+        "name":"总里程",
+        "children":{
+            "id_bytes":1,
+            "map":MILEAGE_MAP
+        }
+    },
+    "0004":{ "name":"总油耗/总电耗", "parser":None },
+    "0005":{ "name":"总运行时长", "parser":None },
+    "0006":{ "name":"总熄火时长", "parser":None },
+    "0007":{ "name":"总怠速时长", "parser":None },
+
+    "0010":{ "name":"加速度表", "parser":None },
+    "0011":{ "name":"车辆状态表", "parser":None },
+    "0012":{ "name":"车辆电压", "parser":None },
+    "0013":{ "name":"终端内置电池电压", "parser":None },
+    "0014":{ "name":"CSQ值", "parser":None },
+    "0015":{ "name":"车型ID", "parser":None },
+    "0016":{ "name":"OBD协议类型", "parser":None },
+    "0017":{ "name":"驾驶循环标签", "parser":None },
+    "0018":{ "name":"GPS收星数", "parser":None },
+    "0019":{ "name":"GPS位置精度", "parser":None },
+    "001A":{ "name":"GPS平均信噪比", "parser":None },
+    "001B":{ "name":"GPS天线状态", "parser":None },
+    "001D":{ "name":"设备拔出状态", "parser":None },
+    "001E":{ "name":"累计里程", "parser":None },
+
+    "0020":{ "name":"点火类型", "parser":None },
+    "0021":{ "name":"碳排放量", "parser":None },
+    "0022":{ "name":"Roll角速度", "parser":None },
+    "0023":{ "name":"Pitch角速度", "parser":None },
+    "0024":{ "name":"Yaw角速度", "parser":None },
+    "0025":{ "name":"累计里程2", "parser":None },
+    "0026":{ "name":"输入状态", "parser":None },
+    "0027":{ "name":"GPS定位解状态", "parser":None },
+    "0028":{ "name":"设备运行时间", "parser":None },
+    "0029":{ "name":"空调状态表", "parser":None }
+}
+
+
+
 # 4.36   附表 附加信息定义 0xE1 -- 0xFD 10个解析
-PARSER_E1_to_EE = {
+Map_E1_to_EE = {
         "E1": {
             "name": "转速",
             "parser": parse_e1
         },
         "EA": {
             "name": "基础数据流",
-            "parser": parse_ea
+            "children":{
+                "id_bytes":2,
+                "map":EA_MAP
+            }
         },
         "EB": {
             "name": "轿车扩展数据流",
@@ -360,3 +422,4 @@ PARSER_E1_to_EE = {
             "parser": parse_fd
         }
     }
+

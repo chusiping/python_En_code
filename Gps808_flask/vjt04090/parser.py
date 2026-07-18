@@ -1,6 +1,6 @@
 from codec import *
-from parse_tvl import * 
-import struct
+from parse_tvl2 import * 
+from PARSER_E1_to_EE import *
 
 # 第一处修改：增加消息分发 增加一个入口：
 def parse_0200(hexstr: str):
@@ -156,7 +156,7 @@ def parse_0200(hexstr: str):
         idx += total_len
         #------------------------------------------------------------------------
 
-        att_info = parse_tlv_func(tlv_data,1,PARSER_E1_to_EE)
+        att_info = parse_tlv(tlv_data,1,Map_E1_to_EE)
         result["附加信息"].append(att_info)
 
         # result["附加信息"].append(   # 暂时不用，用上一行代替
