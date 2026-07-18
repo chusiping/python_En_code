@@ -87,3 +87,45 @@ def parse_tlv(data, id_bytes, parser_map=None):
             "数据":parsed_data
         }
     return result
+
+"""
+函数解释：
+1 这个设计的核心就是：通过映射表描述协议结构，然后根据映射表一层一层往下解析
+2 第一层映射 att_info = parse_tlv(tlv_data,1,Map_E1_to_EE) 
+  遇到 EA：不要直接解析数据。进入下一层
+    Map_E1_to_EE = {
+        "EA": {
+            "name": "基础数据流",
+            "children":{
+                "id_bytes":2,
+                "map":EA_解析EA下的所有ID
+            }
+    }
+    
+
+3   第二层：EA内部数据项 遇到：0003不要直接解析。继续往下
+
+    EA_解析EA下的所有ID = {
+    "0001":{ "name":"预留", "parser":None },
+    "0002":{ "name":"预留", "parser":None },
+    "0003":{
+        "name":"总里程",
+        "children":{
+            "id_bytes":1,
+            "map":MILEAGE_MAP
+        }
+    }
+
+4   这次有 parser 开始解析
+    MILEAGE_MAP={
+        "01":{
+            "name":"GPS总里程",
+            "parser":parse_ea_0003
+        },
+        "02":{
+            "name":"J1939里程",
+            "parser":parse_ea_0003
+        }
+    }
+        
+"""

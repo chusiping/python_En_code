@@ -332,7 +332,7 @@ MILEAGE_MAP={
     }
 }
 
-EA_MAP = {
+EA_解析EA下的所有ID = {
     "0001":{ "name":"预留", "parser":None },
     "0002":{ "name":"预留", "parser":None },
     "0003":{
@@ -377,6 +377,7 @@ EA_MAP = {
 
 
 # 4.36   附表 附加信息定义 0xE1 -- 0xFD 10个解析
+# 意思：遇到 EA：不要直接解析数据进入下一层
 Map_E1_to_EE = {
         "E1": {
             "name": "转速",
@@ -386,7 +387,7 @@ Map_E1_to_EE = {
             "name": "基础数据流",
             "children":{
                 "id_bytes":2,
-                "map":EA_MAP
+                "map":EA_解析EA下的所有ID
             }
         },
         "EB": {
