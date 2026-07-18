@@ -227,7 +227,7 @@ def parse_ee(payload):
    parse_ea_0003 的总里程，它是两部分 ，类型和米数，于是数据错了 出现 if len(data) < 10 
    解决方法：使用 "parser":parse_ea_0003 直接调用函数
    """
-EA_解析EA下的所有ID = {
+Map_解析EA下的所有ID = {
     "0001":{ "name":"预留", "parser":None },
     "0002":{ "name":"预留", "parser":None },
     "0003":{
@@ -279,7 +279,7 @@ Map_E1_to_EE = {
             "name": "基础数据流",
             "children":{
                 "id_bytes":2,
-                "map":EA_解析EA下的所有ID
+                "map":Map_解析EA下的所有ID
             }
         },
         "EB": {
