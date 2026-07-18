@@ -323,11 +323,51 @@ def parse_ee(payload):
 
 MILEAGE_MAP={
     "01":{
-        "name":"GPS总里程",
+        "name":"GPS总里程(累计)",
         "parser":parse_ea_0003
     },
     "02":{
-        "name":"J1939里程",
+        "name":"J1939里程算法1",
+        "parser":parse_ea_0003
+    },
+    "03":{
+        "name":"J1939里程算法2",
+        "parser":parse_ea_0003
+    },
+    "04":{
+        "name":"J1939里程算法3",
+        "parser":parse_ea_0003
+    },
+    "05":{
+        "name":"J1939里程算法4",
+        "parser":parse_ea_0003
+    },
+    "06":{
+        "name":"J1939里程算法5",
+        "parser":parse_ea_0003
+    },
+    "07":{
+        "name":"OBD仪表里程",
+        "parser":parse_ea_0003
+    },
+    "08":{
+        "name":"OBD速度里程",
+        "parser":parse_ea_0003
+    },
+    "09":{
+        "name":"J1939里程算法6",
+        "parser":parse_ea_0003
+    },
+    "0A":{
+        "name":"J1939里程算法7",
+        "parser":parse_ea_0003
+    },
+    "0B":{
+        "name":"J1939里程算法8",
+        "parser":parse_ea_0003
+    },
+    "0C":{
+        "name":"J1939里程算法9",
         "parser":parse_ea_0003
     }
 }
