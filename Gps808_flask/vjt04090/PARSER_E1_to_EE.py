@@ -844,29 +844,29 @@ Map_解析EA下的所有ID = {
     "0003":{ "name":"总里程","parser":parse_ea_0003 },
     "0004":{ "name":"总油耗/总电耗", "parser":parse_ea_0004 },
     "0005":{ "name":"总运行时长",  "parser":lambda x: parse_hex2int(x,"秒")},
-    "0006":{ "name":"总熄火时长", "parser":None },
-    "0007":{ "name":"总怠速时长", "parser":None },
+    "0006":{ "name":"总熄火时长", "parser":lambda x: parse_hex2int(x,"秒")},
+    "0007":{ "name":"总怠速时长", "parser":lambda x: parse_hex2int(x,"秒")},
 
     "0010":{ "name":"加速度表", "parser":parse_ea_0010 },
-    "0011":{ "name":"车辆状态表", "parser":None },
+    "0011":{ "name":"车辆状态表", "parser":parse_ea_0011 },
 
-    "0012":{ "name":"车辆电压", "parser":None },
-    "0013":{ "name":"终端内置电池电压", "parser":None },
-    "0014":{ "name":"CSQ值", "parser":None },
+    "0012":{ "name":"车辆电压", "parser":lambda x: parse_hex2int(x,"0.1V")},
+    "0013":{ "name":"终端内置电池电压", "parser":lambda x: parse_hex2int(x,"0.1V")},
+    "0014":{ "name":"CSQ值", "parser":lambda x: parse_hex2int(x)},
     "0015":{ "name":"车型ID", "parser":None },
 
     "0016":{ "name":"OBD协议类型", "parser":parse_ea_0016 },
-    "0017":{ "name":"驾驶循环标签", "parser":None },
-    "0018":{ "name":"GPS收星数", "parser":None },
-    "0019":{ "name":"GPS位置精度", "parser":None },
-    "001A":{ "name":"GPS平均信噪比", "parser":None },
+    "0017":{ "name":"驾驶循环标签", "parser":lambda x: parse_hex2int(x)},
+    "0018":{ "name":"GPS收星数", "parser":lambda x: parse_hex2int(x)},
+    "0019":{ "name":"GPS位置精度", "parser":lambda x: parse_hex2int(x,"0.01")},
+    "001A":{ "name":"GPS平均信噪比", "parser":lambda x: parse_hex2int(x,"db")},
 
     "001B":{ "name":"GPS天线状态", "parser":parse_ea_001B },
     "001D":{ "name":"设备拔出状态", "parser":parse_ea_001D },
-    "001E":{ "name":"累计里程", "parser":None },
+    "001E":{ "name":"累计里程", "parser":lambda x: parse_hex2int(x,"米")},
 
     "0020":{ "name":"点火类型", "parser":parse_ea_0020 },
-    "0021":{ "name":"碳排放量(g)", "parser":None },
+    "0021":{ "name":"碳排放量(g)", "parser":lambda x: parse_hex2int(x,"克")},
     "0022":{ "name":"Roll角速度", "parser":parse_ea_0022 },
     "0023":{ "name":"Pitch角速度", "parser":parse_ea_0022 },    # 结构一样复用
     "0024":{ "name":"Yaw角速度", "parser":parse_ea_0022 },      # 结构一样复用
@@ -875,7 +875,7 @@ Map_解析EA下的所有ID = {
     "0026":{ "name":"5高1低输入状态", "parser":parse_ea_0026 },
 
     "0027":{ "name":"GPS定位解状态", "parser":parse_ea_0027 },
-    "0028":{ "name":"设备运行时间", "parser":None },
+    "0028":{ "name":"设备运行时间", "parser":lambda x: parse_hex2int(x,"秒")},
     "0029":{ "name":"空调状态表", "parser":parse_ea_0029 }
 }
 
