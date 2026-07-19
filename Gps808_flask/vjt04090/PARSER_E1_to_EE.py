@@ -1,27 +1,5 @@
 from codec import *
 
-
-
-def parse_e1(data):
-    return {}
-def parse_eb(data):
-    return {}
-def parse_ec(data):
-    return {}
-def parse_ed(data):
-    return {}
-def parse_fa(data):
-    return {}
-def parse_fb(data):
-    return {}
-def parse_fc(data):
-    return {}
-def parse_fd(data):
-    return {}
-def parse_ea_0001(data):
-    return {}
-def parse_ea_0002(data):
-    return {}
 # 4.45   附表_基础数据项：总里程格式表 不完善
 def parse_ea_0003(data):
     if len(data) < 10:
@@ -53,8 +31,55 @@ def parse_ea_0003(data):
             "未知类型"
         ),
         "总里程": mileage,
+        "原始数据":data,
         "单位": "米"
     }
+# 附表_基础数据项：总耗油/总电耗量格式表
+def parse_ea_0004(data):
+    # data示例:
+    # 0100001234
+    if len(data) < 10:
+        return {
+            "错误": "总耗油数据长度不足",
+            "数据": data
+        }
+    consume_type = data[0:2]
+    value_hex = data[2:10]
+    type_map = {
+        "01":"J1939油耗算法1",
+        "02":"J1939油耗算法2",
+        "03":"J1939油耗算法3",
+        "04":"J1939油耗算法4",
+        "05":"J1939油耗算法5",
+        "0B":"OBD油耗算法1",
+        "0C":"OBD油耗算法2",
+        "0D":"OBD油耗算法3",
+        "0E":"OBD油耗算法4",
+        "10":"OBD油耗算法5",
+        "A0":"电耗算法1"
+    }
+    value = int(
+        value_hex,
+        16
+    )
+    result = {
+        "类型":
+            type_map.get(
+                consume_type,
+                "4.47 附表_基础数据项(附表查询无此类型)"
+            ),
+        "原始值":
+            data
+    }
+    # 电耗
+    if consume_type == "A0":
+
+        result["电耗"] = value / 100
+        result["单位"] = "KWH"
+    else:
+        result["油耗"] = value
+        result["单位"] = "ML"
+    return result
 
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
@@ -230,11 +255,8 @@ def parse_ee(payload):
 Map_解析EA下的所有ID = {
     "0001":{ "name":"预留", "parser":None },
     "0002":{ "name":"预留", "parser":None },
-    "0003":{
-        "name":"总里程",
-        "parser":parse_ea_0003 
-    },
-    "0004":{ "name":"总油耗/总电耗", "parser":None },
+    "0003":{ "name":"总里程","parser":parse_ea_0003 },
+    "0004":{ "name":"总油耗/总电耗", "parser":parse_ea_0004 },
     "0005":{ "name":"总运行时长", "parser":None },
     "0006":{ "name":"总熄火时长", "parser":None },
     "0007":{ "name":"总怠速时长", "parser":None },
@@ -273,7 +295,7 @@ Map_解析EA下的所有ID = {
 Map_E1_to_EE = {
         "E1": {
             "name": "转速",
-            "parser": parse_e1
+            "parser": None
         },
         "EA": {
             "name": "基础数据流",
@@ -284,15 +306,15 @@ Map_E1_to_EE = {
         },
         "EB": {
             "name": "轿车扩展数据流",
-            "parser": parse_eb
+            "parser": None
         },
         "EC": {
             "name": "货车扩展数据流",
-            "parser": parse_ec
+            "parser": None
         },
         "ED": {
             "name": "新能源汽车数据",
-            "parser": parse_ed
+            "parser": None
         },
         "EE": {
             "name": "扩展外设数据",
@@ -300,19 +322,19 @@ Map_E1_to_EE = {
         },
         "FA": {
             "name": "报警命令",
-            "parser": parse_fa
+            "parser": None
         },
         "FB": {
             "name": "基站数据流",
-            "parser": parse_fb
+            "parser": None
         },
         "FC": {
             "name": "WIFI数据流",
-            "parser": parse_fc
+            "parser": None
         },
         "FD": {
             "name": "0205数据",
-            "parser": parse_fd
+            "parser": None
         }
     }
 
