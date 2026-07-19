@@ -365,6 +365,35 @@ def parse_ea_001D(data):
         "设备状态": status
     }
 
+def parse_ea_0020(data):
+    if len(data) < 4:
+        return {
+            "错误": "点火类型数据长度不足",
+            "数据": data
+        }
+    value = int(data[:4], 16)
+    result = {
+        "原始值": "0x" + data[:4].upper(),
+        "点火类型": {}
+    }
+    bit_map = {
+        0: "ACC线点火",
+        1: "安防监听点火",
+        2: "GPS速度",
+        3: "电压(低电压+震动)",
+        4: "发动机车速转速",
+        5: "ACC中断点火",
+        6: "ADC中断点火",
+        7: "电压(高电压)",
+        8: "维修模式"
+    }
+    for bit, name in bit_map.items():
+        if value & (1 << bit):
+            result["点火类型"][name] = True
+        else:
+            result["点火类型"][name] = False
+    return result
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -562,7 +591,7 @@ Map_解析EA下的所有ID = {
     "001D":{ "name":"设备拔出状态", "parser":parse_ea_001D },
     "001E":{ "name":"累计里程", "parser":None },
 
-    "0020":{ "name":"点火类型", "parser":None },
+    "0020":{ "name":"点火类型", "parser":parse_ea_0020 },
     "0021":{ "name":"碳排放量", "parser":None },
     "0022":{ "name":"Roll角速度", "parser":None },
     "0023":{ "name":"Pitch角速度", "parser":None },
