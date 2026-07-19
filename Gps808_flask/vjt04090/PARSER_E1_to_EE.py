@@ -329,6 +329,26 @@ def parse_ea_0016(data):
         )
     }
 
+def parse_ea_001B(data):
+    status_map = {
+        "00": "天线正常",
+        "01": "天线开路",
+        "02": "天线短路"
+    }
+    if len(data) < 2:
+        return {
+            "错误": "GPS天线状态数据长度不足",
+            "数据": data
+        }
+    value = data[:2].upper()
+    return {
+        "状态编码": "0x" + value,
+        "GPS天线状态": status_map.get(
+            value,
+            "未知状态"
+        )
+    }
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -521,7 +541,8 @@ Map_解析EA下的所有ID = {
     "0018":{ "name":"GPS收星数", "parser":None },
     "0019":{ "name":"GPS位置精度", "parser":None },
     "001A":{ "name":"GPS平均信噪比", "parser":None },
-    "001B":{ "name":"GPS天线状态", "parser":None },
+
+    "001B":{ "name":"GPS天线状态", "parser":parse_ea_001B },
     "001D":{ "name":"设备拔出状态", "parser":None },
     "001E":{ "name":"累计里程", "parser":None },
 
