@@ -543,7 +543,14 @@ def parse_ea_0029(data):
         "特殊功能①":
             parse_特殊功能开关1(byte_data[6]),
         "特殊功能②":
-            parse_ac_special2(byte_data[7])
+            parse_特殊功能开关2(byte_data[7]),
+        "空调定时关闭":
+            {
+                "时间":
+                    byte_data[8],
+                "单位":
+                    "分钟"
+            }     
     }
 
 def parse_主驾空调模式(value):
@@ -621,6 +628,34 @@ def parse_特殊功能开关1(value):
                 )
         }
     }
+
+def parse_特殊功能开关2(value):
+    return {
+        "前除雾":
+        {
+            "支持":
+                bool(value & 0x01),
+            "开启":
+                bool(value & 0x02)
+        },
+        "后除雾":
+        {
+            "支持":
+                bool(value & 0x04),
+            "开启":
+                bool(value & 0x08)
+        },
+        "双区同步":
+        {
+            "支持":
+                bool(value & 0x10),
+            "开启":
+                bool(value & 0x20)
+        }
+    }
+
+
+
 
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
