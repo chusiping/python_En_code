@@ -80,6 +80,10 @@ def parse_ea_0004(data):
     return result
 
 # 4.45   附表_基础数据项：加速度表
+"""举例  0004  00FA      0010 0020 0030 0040   0100
+        点数4  间隔250ms                       最大值
+"""
+
 def parse_ea_0010(data):
     result = {}
     # 至少:
