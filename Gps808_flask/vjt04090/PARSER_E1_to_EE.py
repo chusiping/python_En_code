@@ -83,7 +83,6 @@ def parse_ea_0004(data):
 """举例  0004  00FA      0010 0020 0030 0040   0100
         点数4  间隔250ms                       最大值
 """
-
 def parse_ea_0010(data):
     result = {}
     # 至少:
@@ -144,6 +143,191 @@ def parse_ea_0010(data):
             "单位": "mg"
         }
     return result
+
+# 4.50   附表_基础数据项：车辆状态表
+def parse_ea_0011(data):
+    if len(data) < 22:
+        return {
+            "错误": "车辆状态数据长度不足",
+            "数据": data
+        }
+    # 转byte数组
+    bytes_data = bytes.fromhex(data)
+    result = {}
+    # ======================
+    # 字节0 状态掩码
+    # ======================
+    result["状态掩码"] = {
+        "原始值": bytes_data[0]
+    }
+    # ======================
+    # 字节1 安全状态
+    # ======================
+    b = bytes_data[1]
+    result["安全状态"] = {
+        "ACC状态":
+            "ON" if b & 0x01 else "OFF",
+        "设防状态":
+            "设防" if b & 0x02 else "撤防",
+        "脚刹":
+            "踩下" if b & 0x04 else "松开",
+        "油门":
+            "踩下" if b & 0x08 else "松开",
+        "手刹":
+            "拉起" if b & 0x10 else "放下",
+        "主安全带":
+            "插入" if b & 0x20 else "松开",
+        "副安全带":
+            "插入" if b & 0x40 else "松开",
+        "发动机":
+            "ON" if b & 0x80 else "OFF"
+    }
+    # ======================
+    # 字节2 门状态
+    # ======================
+    b = bytes_data[2]
+    result["门状态"] = {
+        "左前门":
+            "开" if b & 0x01 else "关",
+        "右前门":
+            "开" if b & 0x02 else "关",
+        "左后门":
+            "开" if b & 0x04 else "关",
+        "右后门":
+            "开" if b & 0x08 else "关",
+        "后备箱":
+            "开" if b & 0x10 else "关",
+        "发动机盖":
+            "开" if b & 0x20 else "关"
+    }
+    # ======================
+    # 字节3 锁状态
+    # ======================
+
+    b =bytes_data[3]
+
+    result["锁状态"] = {
+        "左前锁":
+            "落锁" if b & 0x01 else "开锁",
+        "右前锁":
+            "落锁" if b & 0x02 else "开锁",
+        "左后锁":
+            "落锁" if b & 0x04 else "开锁",
+        "右后锁":
+            "落锁" if b & 0x08 else "开锁"
+    }
+    # ======================
+    # 字节4 窗户状态
+    # ======================
+    b = bytes_data[4]
+    result["窗户状态"] = {
+        "左前窗":"开" if b&0x01 else "关",
+        "右前窗":"开" if b&0x02 else "关",
+        "左后窗":"开" if b&0x04 else "关",
+        "右后窗":"开" if b&0x08 else "关",
+        "天窗":"开" if b&0x10 else "关",
+        "左转向灯":"开" if b&0x20 else "关",
+        "右转向灯":"开" if b&0x40 else "关",
+        "阅读灯":"开" if b&0x80 else "关"
+    }
+    # ======================
+    # 字节5 灯光状态
+    # ======================
+    b = bytes_data[5]
+    result["灯光状态"] = {
+        "近光灯":"开" if b&0x01 else "关",
+        "远光灯":"开" if b&0x02 else "关",
+        "前雾灯":"开" if b&0x04 else "关",
+        "后雾灯":"开" if b&0x08 else "关",
+        "危险灯":"开" if b&0x10 else "关",
+        "倒车灯":"开" if b&0x20 else "关",
+        "AUTO灯":"开" if b&0x40 else "关",
+        "示宽灯":"开" if b&0x80 else "关"
+    }
+    # ======================
+    # 字节6 开关状态A
+    # ======================
+    b = bytes_data[6]
+    result["开关状态A"]={
+        "机油报警":
+            "ON" if b&0x01 else "OFF",
+        "燃油报警":
+            "ON" if b&0x02 else "OFF",
+        "雨刷":
+            "开" if b&0x04 else "关",
+        "喇叭":
+            "开" if b&0x08 else "关",
+        "空调":
+            "开" if b&0x10 else "关",
+        "后视镜":
+            "开" if b&0x20 else "关"
+    }
+    # ======================
+    # 字节7 档位
+    # ======================
+
+    gear = bytes_data[7] & 0x0F
+    gear_map = {
+        0:"P",
+        1:"R",
+        2:"N",
+        3:"D",
+        4:"1",
+        5:"2",
+        6:"3",
+        7:"4",
+        8:"5",
+        9:"6",
+        10:"M",
+        11:"S",
+        12:"B",
+        13:"L",
+        15:"不存在"
+    }
+    result["档位"] = gear_map.get(
+        gear,
+        "未知"
+    )
+    # ======================
+    # 字节8 钥匙状态
+    # ======================
+    b = bytes_data[8]
+    result["钥匙状态"]={
+        "供电状态":
+            "供电" if b&0x01 else "断电",
+        "钥匙":
+            "存在" if b&0x02 else "不存在"
+    }
+    return result
+
+# 4.49   附表_基础数据项：协议类型表
+def parse_ea_0016(data):
+    protocol_map = {
+        "11": "CAN 11_500",
+        "12": "CAN 11_250",
+        "13": "CAN 29_500_EX",
+        "14": "CAN 29_250_EX",
+        "20": "KWP2000",
+        "30": "KWP2000M",
+        "40": "ISO9141",
+        "50": "VPW",
+        "60": "PWM",
+        "70": "PRIVATE",
+        "F0": "J1939"
+    }
+    if len(data) < 2:
+        return {
+            "错误": "协议类型数据长度不足",
+            "数据": data
+        }
+    value = data[:2].upper()
+    return {
+        "协议类型编码": "0x" + value,
+        "协议类型": protocol_map.get(
+            value,
+            "未知协议"
+        )
+    }
 
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
@@ -316,9 +500,8 @@ def parse_ee(payload):
    parse_ea_0003 的总里程，它是两部分 ，类型和米数，于是数据错了 出现 if len(data) < 10 
    解决方法：使用 "parser":parse_ea_0003 直接调用函数
    """
+# 4.37   附表_基础数据流
 Map_解析EA下的所有ID = {
-    "0001":{ "name":"预留", "parser":None },
-    "0002":{ "name":"预留", "parser":None },
     "0003":{ "name":"总里程","parser":parse_ea_0003 },
     "0004":{ "name":"总油耗/总电耗", "parser":parse_ea_0004 },
     "0005":{ "name":"总运行时长", "parser":None },
@@ -327,11 +510,13 @@ Map_解析EA下的所有ID = {
 
     "0010":{ "name":"加速度表", "parser":parse_ea_0010 },
     "0011":{ "name":"车辆状态表", "parser":None },
+
     "0012":{ "name":"车辆电压", "parser":None },
     "0013":{ "name":"终端内置电池电压", "parser":None },
     "0014":{ "name":"CSQ值", "parser":None },
     "0015":{ "name":"车型ID", "parser":None },
-    "0016":{ "name":"OBD协议类型", "parser":None },
+
+    "0016":{ "name":"OBD协议类型", "parser":parse_ea_0016 },
     "0017":{ "name":"驾驶循环标签", "parser":None },
     "0018":{ "name":"GPS收星数", "parser":None },
     "0019":{ "name":"GPS位置精度", "parser":None },
