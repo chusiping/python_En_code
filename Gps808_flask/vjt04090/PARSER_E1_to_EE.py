@@ -454,6 +454,44 @@ def parse_ea_0025(data):
             "米"
     }
 
+def parse_ea_0026(data):
+    if len(data) < 12:
+        return {
+            "错误": "D_IN状态数据长度不足",
+            "数据": data
+        }
+    # 每2个HEX字符一个byte
+    values = [
+        int(data[i:i+2],16)
+        for i in range(0,12,2)
+    ]
+    return {
+        "D_IN2高输入": {
+            "原始值": values[0],
+            "状态": "检测到高" if values[0] == 1 else "无检测"
+        },
+        "D_IN3高输入": {
+            "原始值": values[1],
+            "状态": "检测到高" if values[1] == 1 else "无检测"
+        },
+        "D_IN4高输入": {
+            "原始值": values[2],
+            "状态": "检测到高" if values[2] == 1 else "无检测"
+        },
+        "D_IN5高输入": {
+            "原始值": values[3],
+            "状态": "检测到高" if values[3] == 1 else "无检测"
+        },
+        "D_IN6低输入": {
+            "原始值": values[4],
+            "状态": "检测到低" if values[4] == 1 else "无检测"
+        },
+        "D_IN7高输入": {
+            "原始值": values[5],
+            "状态": "检测到高" if values[5] == 1 else "无检测"
+        }
+    }
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -658,7 +696,7 @@ Map_解析EA下的所有ID = {
     "0024":{ "name":"Yaw角速度", "parser":parse_ea_0022 },      # 结构一样复用
 
     "0025":{ "name":"累计里程2(SWD专用)", "parser":parse_ea_0025 },
-    "0026":{ "name":"输入状态", "parser":None },
+    "0026":{ "name":"5高1低输入状态", "parser":parse_ea_0026 },
     "0027":{ "name":"GPS定位解状态", "parser":None },
     "0028":{ "name":"设备运行时间", "parser":None },
     "0029":{ "name":"空调状态表", "parser":None }
