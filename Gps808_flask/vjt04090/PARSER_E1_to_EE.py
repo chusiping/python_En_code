@@ -654,8 +654,19 @@ def parse_特殊功能开关2(value):
         }
     }
 
-
-
+def parse_hex2int(data, unit=None, scale=1):
+    if not data:
+        return {
+            "错误":"数据为空"
+        }
+    value = int(data,16)
+    result = {
+        "原始数据":data,
+        "数值":value * scale
+    }
+    if unit:
+        result["单位"] = unit
+    return result
 
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
@@ -832,7 +843,7 @@ def parse_ee(payload):
 Map_解析EA下的所有ID = {
     "0003":{ "name":"总里程","parser":parse_ea_0003 },
     "0004":{ "name":"总油耗/总电耗", "parser":parse_ea_0004 },
-    "0005":{ "name":"总运行时长", "parser":None },
+    "0005":{ "name":"总运行时长",  "parser":lambda x: parse_hex2int(x,"秒")},
     "0006":{ "name":"总熄火时长", "parser":None },
     "0007":{ "name":"总怠速时长", "parser":None },
 
