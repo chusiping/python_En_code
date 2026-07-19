@@ -349,6 +349,22 @@ def parse_ea_001B(data):
         )
     }
 
+def parse_ea_001D(data):
+    if len(data) < 2:
+        return {
+            "错误": "设备拔出状态数据长度不足",
+            "数据": data
+        }
+    value = data[:2].upper()
+    if value == "02":
+        status = "设备拔出 或者 设备上电后第一次定位前"
+    else:
+        status = "其他"
+    return {
+        "状态编码": "0x" + value,
+        "设备状态": status
+    }
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -543,7 +559,7 @@ Map_解析EA下的所有ID = {
     "001A":{ "name":"GPS平均信噪比", "parser":None },
 
     "001B":{ "name":"GPS天线状态", "parser":parse_ea_001B },
-    "001D":{ "name":"设备拔出状态", "parser":None },
+    "001D":{ "name":"设备拔出状态", "parser":parse_ea_001D },
     "001E":{ "name":"累计里程", "parser":None },
 
     "0020":{ "name":"点火类型", "parser":None },
