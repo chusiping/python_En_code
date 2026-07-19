@@ -420,6 +420,40 @@ def parse_ea_0022(data):
         "单位": "dps"
     } 
 
+def parse_ea_0025(data):
+    if len(data) < 10:
+        return {
+            "错误": "累计里程2数据长度不足",
+            "数据": data
+        }
+    # =====================
+    # 累计类型
+    # =====================
+    type_code = data[0:2].upper()
+    type_map = {
+        "01": "GPS速度累计",
+        "02": "OBD速度累计",
+        "03": "OBD仪表累计"
+    }
+    # =====================
+    # 累计里程
+    # =====================
+    mileage_hex = data[2:10]
+    mileage = int(mileage_hex,16)
+    return {
+        "累计类型编码":
+            "0x" + type_code,
+        "累计类型":
+            type_map.get(
+                type_code,
+                "未知类型"
+            ),
+        "累计里程":
+            mileage,
+        "单位":
+            "米"
+    }
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -620,10 +654,10 @@ Map_解析EA下的所有ID = {
     "0020":{ "name":"点火类型", "parser":parse_ea_0020 },
     "0021":{ "name":"碳排放量(g)", "parser":None },
     "0022":{ "name":"Roll角速度", "parser":parse_ea_0022 },
+    "0023":{ "name":"Pitch角速度", "parser":parse_ea_0022 },    # 结构一样复用
+    "0024":{ "name":"Yaw角速度", "parser":parse_ea_0022 },      # 结构一样复用
 
-    "0023":{ "name":"Pitch角速度", "parser":None },
-    "0024":{ "name":"Yaw角速度", "parser":None },
-    "0025":{ "name":"累计里程2", "parser":None },
+    "0025":{ "name":"累计里程2(SWD专用)", "parser":parse_ea_0025 },
     "0026":{ "name":"输入状态", "parser":None },
     "0027":{ "name":"GPS定位解状态", "parser":None },
     "0028":{ "name":"设备运行时间", "parser":None },
