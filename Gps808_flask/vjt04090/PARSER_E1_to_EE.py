@@ -492,6 +492,31 @@ def parse_ea_0026(data):
         }
     }
 
+def parse_ea_0027(data):
+    if len(data) < 2:
+        return {
+            "错误": "GPS定位解状态数据长度不足",
+            "数据": data
+        }
+    value = data[:2].upper()
+    status_map = {
+        "00": "定位无效",
+        "01": "普通定位",
+        "02": "伪距差分定位(RTD)",
+        "03": "未定义",
+        "04": "RTK固定解",
+        "05": "RTK浮点解",
+        "06": "航迹推算"
+    }
+    return {
+        "状态编码": "0x" + value,
+        "GPS定位解状态":
+            status_map.get(
+                value,
+                "未知状态"
+            )
+    }
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -697,7 +722,8 @@ Map_解析EA下的所有ID = {
 
     "0025":{ "name":"累计里程2(SWD专用)", "parser":parse_ea_0025 },
     "0026":{ "name":"5高1低输入状态", "parser":parse_ea_0026 },
-    "0027":{ "name":"GPS定位解状态", "parser":None },
+
+    "0027":{ "name":"GPS定位解状态", "parser":parse_ea_0027 },
     "0028":{ "name":"设备运行时间", "parser":None },
     "0029":{ "name":"空调状态表", "parser":None }
 }
