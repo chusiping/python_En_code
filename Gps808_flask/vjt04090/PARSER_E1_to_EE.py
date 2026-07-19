@@ -394,6 +394,32 @@ def parse_ea_0020(data):
             result["点火类型"][name] = False
     return result
 
+def parse_ea_0022(data):
+    if len(data) < 4:
+        return {
+            "错误": "Roll角速度数据长度不足",
+            "数据": data
+        }
+    raw = int(data[:4], 16)
+    # bit15 符号
+    negative = (raw & 0x8000) != 0
+    # bit0-14 数值
+    value = raw & 0x7FFF
+    # 精度0.1
+    speed = value / 10
+    if negative:
+        speed = -speed
+        direction = "负方向"
+    else:
+        direction = "正方向"
+    return {
+        "原始值": "0x" + data[:4].upper(),
+        "方向": direction,
+        "数值": value,
+        "角速度": speed,
+        "单位": "dps"
+    } 
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -592,8 +618,9 @@ Map_解析EA下的所有ID = {
     "001E":{ "name":"累计里程", "parser":None },
 
     "0020":{ "name":"点火类型", "parser":parse_ea_0020 },
-    "0021":{ "name":"碳排放量", "parser":None },
-    "0022":{ "name":"Roll角速度", "parser":None },
+    "0021":{ "name":"碳排放量(g)", "parser":None },
+    "0022":{ "name":"Roll角速度", "parser":parse_ea_0022 },
+
     "0023":{ "name":"Pitch角速度", "parser":None },
     "0024":{ "name":"Yaw角速度", "parser":None },
     "0025":{ "name":"累计里程2", "parser":None },
