@@ -1,6 +1,6 @@
 from codec import *
 
-# 4.45   附表_基础数据项：总里程格式表 不完善
+# 4.45   附表_基础数据项：总里程格式表 
 def parse_ea_0003(data):
     if len(data) < 10:
         return {
@@ -34,10 +34,9 @@ def parse_ea_0003(data):
         "原始数据":data,
         "单位": "米"
     }
-# 附表_基础数据项：总耗油/总电耗量格式表
+
+# 4.45   附表_基础数据项：总耗油/总电耗量格式表
 def parse_ea_0004(data):
-    # data示例:
-    # 0100001234
     if len(data) < 10:
         return {
             "错误": "总耗油数据长度不足",
@@ -73,12 +72,73 @@ def parse_ea_0004(data):
     }
     # 电耗
     if consume_type == "A0":
-
         result["电耗"] = value / 100
         result["单位"] = "KWH"
     else:
         result["油耗"] = value
         result["单位"] = "ML"
+    return result
+
+# 4.45   附表_基础数据项：加速度表
+def parse_ea_0010(data):
+    result = {}
+    # 至少:
+    # 点数量2字节
+    # 间隔2字节
+    # 最大值2字节
+    if len(data) < 12:
+        return {
+            "错误": "加速度数据长度不足",
+            "数据": data
+        }
+    # ----------------
+    # 采集点数量
+    # ----------------
+    point_count = int(
+        data[0:4],
+        16
+    )
+    # ----------------
+    # 采集间隔
+    # ----------------
+    interval = int(
+        data[4:8],
+        16
+    )
+    result["采集点数量"] = point_count
+    result["采集间隔"] = interval
+    result["单位"] = "ms"
+    # ----------------
+    # 加速度点
+    # ----------------
+    points = []
+    index = 8
+    for i in range(point_count):
+        if index + 4 > len(data):
+            break
+        value = int(
+            data[index:index+4],
+            16
+        )
+        points.append({
+            "序号": i+1,
+            "加速度": value,
+            "单位": "mg"
+        })
+        index += 4
+    result["采集点"] = points
+    # ----------------
+    # 最大加速度
+    # ----------------
+    if index + 4 <= len(data):
+        max_value = int(
+            data[index:index+4],
+            16
+        )
+        result["最大加速度"] = {
+            "值": max_value,
+            "单位": "mg"
+        }
     return result
 
 def parse_3001(value):  #   3001 正反转
@@ -261,7 +321,7 @@ Map_解析EA下的所有ID = {
     "0006":{ "name":"总熄火时长", "parser":None },
     "0007":{ "name":"总怠速时长", "parser":None },
 
-    "0010":{ "name":"加速度表", "parser":None },
+    "0010":{ "name":"加速度表", "parser":parse_ea_0010 },
     "0011":{ "name":"车辆状态表", "parser":None },
     "0012":{ "name":"车辆电压", "parser":None },
     "0013":{ "name":"终端内置电池电压", "parser":None },
