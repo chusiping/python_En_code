@@ -517,6 +517,111 @@ def parse_ea_0027(data):
             )
     }
 
+def parse_ea_0029(data):
+    if len(data) < 22:
+        return {
+            "错误": "空调状态数据长度不足",
+            "数据": data
+        }
+    byte_data = [
+        int(data[i:i+2],16)
+        for i in range(0,16,2)
+    ]
+    return {
+        "空调开关":
+            "打开" if byte_data[0] & 0x01 else "关闭",
+        "空调模式":
+            parse_主驾空调模式(byte_data[1]),
+        "主驾温度":
+            parse_主驾温度解析(byte_data[2]),
+        "副驾温度":
+            parse_主驾温度解析(byte_data[3]),
+        "风量":
+            parse_风量等级(byte_data[4]),
+        "出风模式":
+            parse_出风模式(byte_data[5]),
+        "特殊功能①":
+            parse_特殊功能开关1(byte_data[6]),
+        "特殊功能②":
+            parse_ac_special2(byte_data[7])
+    }
+
+def parse_主驾空调模式(value):
+    mode = {
+        0x00:"未知",
+        0x01:"自动模式",
+        0x02:"制冷模式",
+        0x03:"制热模式",
+        0x04:"除湿模式",
+        0x05:"送风模式"
+    }
+    return mode.get(
+        value,
+        "预留"
+    )
+
+def parse_主驾温度解析(value):
+    if value == 0x00:
+        return "未知"
+    if value == 0xFF:
+        return "自动"
+    temp = value * 0.5 + 9.5
+    return {
+        "温度":temp,
+        "单位":"℃"
+    }
+
+def parse_风量等级(value):
+    if value == 0:
+        return "未知"
+    if value == 0xFF:
+        return "自动"
+    return {
+        "等级":value+1
+    }
+
+def parse_出风模式(value):
+    mode={
+        0x00:"未知",
+        0x01:"吹身子",
+        0x02:"吹脚",
+        0x03:"吹前风挡",
+        0x04:"吹身子+吹脚",
+        0x05:"吹前风挡+吹脚",
+        0x06:"吹身子+吹前风挡",
+        0x07:"吹身子+吹前风挡+吹脚"
+    }
+    return mode.get(
+        value,
+        "预留"
+    )
+
+def parse_特殊功能开关1(value):
+    return {
+        "A/C":
+        {
+            "支持":
+                bool(value & 0x01),
+            "开启":
+                bool(value & 0x02)
+        },
+        "循环模式":
+        {
+            "支持":
+                bool(value & 0x04),
+            "模式":
+                {
+                    0:"关闭",
+                    1:"内循环",
+                    2:"外循环",
+                    3:"内外循环同时打开/自动"
+                }.get(
+                    (value >> 4)&0x03,
+                    "未知"
+                )
+        }
+    }
+
 def parse_3001(value):  #   3001 正反转
     status = int(value,16)
     return {
@@ -725,7 +830,7 @@ Map_解析EA下的所有ID = {
 
     "0027":{ "name":"GPS定位解状态", "parser":parse_ea_0027 },
     "0028":{ "name":"设备运行时间", "parser":None },
-    "0029":{ "name":"空调状态表", "parser":None }
+    "0029":{ "name":"空调状态表", "parser":parse_ea_0029 }
 }
 
 
