@@ -4,6 +4,7 @@ from parser import parse_jt808_packet
 from parser_factory import *
 from protocol_load import load_protocol_config
 from log import *
+from save_result import * 
 
 # TCP收到设备数据 → 判断协议 → 找解析器 → 解析 → 转明文 → 保存
 """
@@ -45,6 +46,8 @@ def client_thread(conn, addr):
                 if parser:
                     # 3. 解析
                     result = parser.parse(data)
+                    filename = save_result(result)
+                    print("保存:",filename)
                     print("解析结果:")
                     for k,v in result.items():
                         print(

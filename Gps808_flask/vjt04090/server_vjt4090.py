@@ -2,6 +2,7 @@ import socket
 import threading
 from parser import parse_jt808_packet
 from log import *
+from save_result import * 
 
 HOST = "0.0.0.0"
 PORT = 7534
@@ -23,6 +24,7 @@ def client_thread(conn, addr):
             print("-" * 80)
             try:
                 result = parse_jt808_packet(hexstr)
+                save_result(result)
                 print("解析结果：")
                 if isinstance(result, dict):
                     for k, v in result.items():
