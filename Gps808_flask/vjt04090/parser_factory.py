@@ -19,3 +19,18 @@ class ParserFactory:
     def get(protocol):
         return ParserFactory.parsers.get(protocol)
     
+class ProtocolDetector:
+    def __init__(self, protocol_map):
+        self.protocol_map = protocol_map
+    def detect(self, data):
+        if not data:
+            return "UNKNOWN"
+        # 判断7E
+        if data[0] != 0x7E:
+            return "UNKNOWN"
+        # 消息ID
+        msg_id = data[1:3].hex().upper()
+        for protocol, msg_list in self.protocol_map.items():
+            if msg_id in msg_list:
+                return protocol
+        return "UNKNOWN"
