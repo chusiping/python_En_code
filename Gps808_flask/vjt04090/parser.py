@@ -187,6 +187,8 @@ def parse_jt808_packet(hexstr):
         return parse_0900(hexstr)
     elif msg_id == "8001":
         return parse_8001(hexstr)
+    elif msg_id == "0002":
+        return parse_0002(hexstr)
     else:
         return {
             "msg_id": msg_id,
@@ -265,6 +267,28 @@ def parse_8001(hexstr):
     )
     return result
 
+# 终端心跳包上报 未写完
+def parse_0002(hexstr):
+    result = {}
+    # 消息ID
+    result["消息ID"] = hexstr[0:4]
+    # 消息体属性
+    body_attr = int(hexstr[4:8], 16)
+    result["消息体属性"] = body_attr
+    # 终端手机号（BCD[6]）
+    result["终端手机号"] = hexstr[8:20]
+    # 消息流水号
+    result["消息流水号"] = int(hexstr[20:24], 16)
+    # 消息体长度（低10位）
+    result["消息体长度"] = body_attr & 0x03FF
+    # 是否分包（第13位）
+    result["是否分包"] = bool(body_attr & 0x2000)
+
+    # if result["is_subpackage"]:
+    #     result["package_total"] = int(hexstr[24:28], 16)
+    #     result["package_index"] = int(hexstr[28:32], 16)
+    # result["type"] = "终端心跳"
+    return result
 
 def parse_f2(payload):
 
