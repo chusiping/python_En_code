@@ -7,7 +7,7 @@ def save_result(result):
     counter += 1
     # 创建目录
     os.makedirs(
-        "./Gps808_flask/result",
+        "result",
         exist_ok=True
     )
     # 文件名
