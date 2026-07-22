@@ -226,31 +226,44 @@ def parse_0900(hexstr):
     # result["数据"]=payload
     return result
 
-def parse_8001(body):
-
-    result_map = {
-        0: "成功",
+def parse_8001(hexstr):
+    result = {}
+    # 消息ID
+    result["消息ID"] = hexstr[0:4]
+    # 消息体属性
+    result["消息属性"] = int(
+        hexstr[4:8],
+        16
+    )
+    # 终端手机号 6字节BCD
+    result["终端号"] = hexstr[8:20]
+    # 流水号
+    result["流水号"] = int(
+        hexstr[20:24],
+        16
+    )
+    # 去掉校验
+    body = hexstr[24:-2]
+    # 8001消息体
+    result["reply_serial"] = int(
+        body[0:4],
+        16
+    )
+    result["应答ID"] = body[4:8] #应答ID → 保留十六进制
+    status = int(
+        body[8:10],
+        16
+    )
+    result["结果"] = {
+        0: "成功/确认",
         1: "失败",
         2: "消息有误",
-        3: "不支持",
-        4: "报警处理确认"
-    }
-
-    if len(body) < 10:
-        return {"error":"消息体长度不足"}
-
-    reply_serial = int(body[0:4],16)
-
-    reply_msgid = body[4:8]
-
-    reply_result = int(body[8:10],16)
-
-    return {
-        "应答流水号": reply_serial,
-        "应答消息ID": reply_msgid,
-        "结果": reply_result,
-        "结果说明": result_map.get(reply_result,"未知")
-    }
+        3: "不支持"
+    }.get(
+        status,
+        "未知"
+    )
+    return result
 
 
 def parse_f2(payload):
