@@ -1,9 +1,9 @@
 import socket
 import threading
 from parser import parse_jt808_packet
-from protocol_detector import ProtocolDetector
 from parser_factory import *
 from protocol_load import load_protocol_config
+from log import *
 
 # TCP收到设备数据 → 判断协议 → 找解析器 → 解析 → 转明文 → 保存
 """
@@ -29,6 +29,7 @@ def client_thread(conn, addr):
             data = conn.recv(4096)
             if not data:
                 break
+            save_log(data, addr)
             hexstr = recv_all_hex(data)
             print("\n收到数据：")
             print(hexstr)

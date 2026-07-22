@@ -1,6 +1,7 @@
 import socket
 import threading
 from parser import parse_jt808_packet
+from log import *
 
 HOST = "0.0.0.0"
 PORT = 7534
@@ -15,6 +16,7 @@ def client_thread(conn, addr):
             data = conn.recv(4096)
             if not data:
                 break
+            save_log(data, addr)
             hexstr = recv_all_hex(data)
             print("\n收到数据：")
             print(hexstr)
