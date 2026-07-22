@@ -40,7 +40,7 @@ def client_thread(conn, addr):
                     protocol
                 )
                 # 2. 获取解析器
-                parser = ParserFactory.get(protocol)
+                parser = ParserFactory.get(protocol)  # 根据协议选择函数
                 if parser:
                     # 3. 解析
                     result = parser.parse(data)
