@@ -9,7 +9,28 @@ def index():
     files = []
     for f in os.listdir(RESULT_DIR):
         if f.endswith(".json"):
-            files.append(f)
+
+                path = os.path.join(
+                    RESULT_DIR,
+                    f
+                )
+
+                files.append(
+                    (
+                        f,
+                        os.path.getmtime(path)
+                    )
+                )
+    # 按修改时间倒序
+    files.sort(
+        key=lambda x: x[1],
+        reverse=True
+    )
+    # 只取最新200个
+    files = [
+        x[0]
+        for x in files[:2]
+]
     files.sort(reverse=True)
     html = """
     <h2>解析结果列表</h2>
