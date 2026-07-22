@@ -1,6 +1,6 @@
 import json
 import os
-
+# 加载json
 def load_protocol_config(config_dir="config"):
     protocol_map = {}
     if not os.path.exists(config_dir):
