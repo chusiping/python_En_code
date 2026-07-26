@@ -5,9 +5,22 @@ def read_and_process_excel(file_path):
     # 读取数据
     try:
         df = pd.read_excel(file_path, header=3)
+
+        columns = ['序号', '时间', '经纬度', '速度', '行驶方向', '状态', '里程']
         
+        # 多余列自动删除
+        if len(df.columns) > len(columns):
+            extra_columns = df.columns[len(columns):].tolist()
+            print(f"发现多余列 {len(extra_columns)} 个，已忽略: {extra_columns}")
+            df = df.iloc[:, :len(columns)]
+
+        # 少列直接报错
+        elif len(df.columns) < len(columns):
+            raise Exception(
+                f"Excel列数量错误，需要{len(columns)}列，实际{len(df.columns)}列"
+            )
         # 重命名列
-        df.columns = ['序号', '时间', '经纬度', '速度', '行驶方向', '状态','里程']
+        df.columns = columns
         
         # 转换时间列
         df['时间'] = pd.to_datetime(df['时间'])
