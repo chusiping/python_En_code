@@ -79,9 +79,13 @@ def split_hex(hexstr):
                 result.append("7E")
 
             else:
+                print(
+                    "附近数据:",
+                    hexstr[idx-20:idx+20]
+                )    
                 # 非法转义
                 raise ValueError(
-                    f"非法转义: 7D{next_byte}"
+                    f"非法转义: 7D{next_byte}, 位置:{idx//2}字节"
                 )
 
             idx += 4
