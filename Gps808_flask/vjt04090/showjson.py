@@ -29,7 +29,7 @@ def index():
     # 只取最新200个
     files = [
         x[0]
-        for x in files[:2]
+        for x in files[:10]
 ]
     files.sort(reverse=True)
     html = """
