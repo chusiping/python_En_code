@@ -269,26 +269,70 @@ def parse_8001(hexstr):
 
 # 终端心跳包上报 未写完
 def parse_0002(hexstr):
+    """
+    JT808消息头解析
+    hexstr: 十六进制字符串
+    """
     result = {}
+    # =========================
     # 消息ID
+    # =========================
     result["消息ID"] = hexstr[0:4]
-    # 消息体属性
+    # =========================
+    # 消息体属性 WORD
+    # =========================
     body_attr = int(hexstr[4:8], 16)
-    result["消息体属性"] = body_attr
-    # 终端手机号（BCD[6]）
-    result["终端手机号"] = hexstr[8:20]
-    # 消息流水号
-    result["消息流水号"] = int(hexstr[20:24], 16)
-    # 消息体长度（低10位）
+    result["消息体属性"] = f"{body_attr:04X}"
+    # 消息体长度 bit0-bit9
     result["消息体长度"] = body_attr & 0x03FF
-    # 是否分包（第13位）
-    result["是否分包"] = bool(body_attr & 0x2000)
-
-    # if result["is_subpackage"]:
-    #     result["package_total"] = int(hexstr[24:28], 16)
-    #     result["package_index"] = int(hexstr[28:32], 16)
-    # result["type"] = "终端心跳"
+    # 加密方式 bit10-bit12
+    encrypt = (body_attr >> 10) & 0x07
+    result["数据加密方式"] = {
+        0: "不加密",
+        1: "RSA加密",
+        4: "SM4加密"
+    }.get(
+        encrypt,
+        "未知"
+    )
+    # 是否分包 bit13
+    is_subpackage = bool(
+        body_attr & 0x2000
+    )
+    result["是否分包"] = is_subpackage
+    # =========================
+    # 终端手机号 BCD[6]
+    # =========================
+    phone_hex = hexstr[8:20]
+    phone = ""
+    for i in range(0,12,2):
+        phone += phone_hex[i:i+2]
+    # 去掉前导0
+    result["终端手机号"] = phone.lstrip("0")
+    # =========================
+    # 消息流水号
+    # =========================
+    result["消息流水号"] = int(
+        hexstr[20:24],
+        16
+    )
+    # =========================
+    # 分包信息
+    # =========================
+    index = 24
+    if is_subpackage:
+        result["消息总包数"] = int(
+            hexstr[index:index+4],
+            16
+        )
+        index += 4
+        result["包序号"] = int(
+            hexstr[index:index+4],
+            16
+        )
     return result
+
+
 
 def parse_f2(payload):
 
