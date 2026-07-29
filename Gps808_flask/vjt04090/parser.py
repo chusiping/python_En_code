@@ -172,8 +172,10 @@ def parse_0200(hexstr: str):
     # 校验码
     result["校验码"] = take(2)
     return result
-def parse_jt808_packet(hexstr):
-    hexstr = split_hex(hexstr)
+def parse_jt808_packet(hexstr, escaped=False):
+    if escaped:
+        hexstr = split_hex(hexstr)
+    # 后面正常解析
     # 去掉7E
     if hexstr.startswith("7E"):
         hexstr = hexstr[2:]
