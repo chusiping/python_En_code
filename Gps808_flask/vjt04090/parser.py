@@ -189,6 +189,8 @@ def parse_jt808_packet(hexstr):
         return parse_8001(hexstr)
     elif msg_id == "0002":
         return parse_0002(hexstr)
+    elif msg_id == "0205":
+        return parse_0205(hexstr)
     else:
         return {
             "msg_id": msg_id,
@@ -332,7 +334,151 @@ def parse_0002(hexstr):
         )
     return result
 
-
+def parse_0205(hexstr):
+    result = {}
+    # =========================
+    # 消息ID
+    # =========================
+    result["消息ID"] = hexstr[0:4]
+    # =========================
+    # 消息体属性 WORD
+    # =========================
+    body_attr = int(hexstr[4:8], 16)
+    result["消息体属性"] = f"{body_attr:04X}"
+    # 消息体长度 bit0-bit9
+    body_len = body_attr & 0x03FF
+    result["消息体长度"] = body_len
+    # =========================
+    # 加密方式 bit10-bit12
+    # =========================
+    encrypt = (body_attr >> 10) & 0x07
+    result["数据加密方式"] = {
+        0: "不加密",
+        1: "RSA加密",
+        4: "SM4加密"
+    }.get(
+        encrypt,
+        "未知"
+    )
+    # =========================
+    # 是否分包 bit13
+    # =========================
+    is_subpackage = bool(
+        body_attr & 0x2000
+    )
+    result["是否分包"] = is_subpackage
+    # =========================
+    # 终端手机号 BCD[6]
+    # =========================
+    phone_hex = hexstr[8:20]
+    phone = ""
+    for i in range(0,12,2):
+        phone += phone_hex[i:i+2]
+    result["终端手机号"] = phone.lstrip("0")
+    # =========================
+    # 消息流水号
+    # =========================
+    result["消息流水号"] = int(
+        hexstr[20:24],
+        16
+    )
+    # =========================
+    # 分包信息
+    # =========================
+    index = 24
+    if is_subpackage:
+        result["消息总包数"] = int(
+            hexstr[index:index+4],
+            16
+        )
+        index += 4
+        result["包序号"] = int(
+            hexstr[index:index+4],
+            16
+        )
+        index += 4
+    # =========================
+    # 消息体开始
+    # =========================
+    body_start = index
+    body_hex = hexstr[
+        body_start:
+        body_start + body_len * 2
+    ]
+    # =========================
+    # 0205消息体
+    # =========================
+    body_index = 0
+    def read_string(length):
+        nonlocal body_index
+        value = bytes.fromhex(
+            body_hex[
+                body_index:
+                body_index + length * 2
+            ]
+        )
+        body_index += length * 2
+        return value.decode(
+            "ascii",
+            errors="ignore"
+        ).strip("\x00")
+    def read_bytes(length):
+        nonlocal body_index
+        value = body_hex[
+            body_index:
+            body_index + length * 2
+        ]
+        body_index += length * 2
+        return value.upper()
+    def read_word():
+        nonlocal body_index
+        value = int(
+            body_hex[
+                body_index:
+                body_index+4
+            ],
+            16
+        )
+        body_index += 4
+        return value
+    def read_dword():
+        nonlocal body_index
+        value = int(
+            body_hex[
+                body_index:
+                body_index+8
+            ],
+            16
+        )
+        body_index += 8
+        return value
+    # 版本号
+    result["终端软件版本号"] = read_string(14)
+    # 日期
+    result["终端软件版本日期"] = read_string(10)
+    # CPU ID
+    result["CPU ID号"] = read_bytes(12)
+    # GSM TYPE
+    result["GSM TYPE Name"] = read_string(15)
+    # IMEI
+    result["GSM IMEI号"] = read_string(15)
+    # IMSI
+    result["SIM卡 IMSI号"] = read_string(15)
+    # ICCID
+    result["SIM卡 ICCID"] = read_string(20)
+    # 车系车型ID
+    result["Car Type"] = read_word()
+    # VIN
+    result["VIN"] = read_string(17)
+    # 总里程
+    result["总里程"] = {
+    "值":91273655,
+    "单位":"m",
+    "千米":91273.655
+}
+    # 总耗油量
+    result["总耗油量"] = read_dword()
+    return result
 
 def parse_f2(payload):
 
