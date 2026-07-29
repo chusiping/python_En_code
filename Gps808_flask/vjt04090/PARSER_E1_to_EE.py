@@ -835,6 +835,44 @@ def parse_ee(payload):
             result[f"未知_{func_id}"] = value
     return result
 
+
+from parse_carextentdataflow import TRUCK_EXT_CONFIG
+
+def parse_ec(hexstr):
+    data = bytes.fromhex(hexstr)
+    result={}
+    index=0
+    while index < len(data):
+        # ID 两字节
+        func_id=data[index:index+2].hex().upper()
+        index+=2
+        if index>=len(data):
+            break
+        # 长度
+        length=data[index]
+        index+=1
+        # 数据
+        value=data[index:index+length]
+        index+=length
+        cfg=TRUCK_EXT_CONFIG.get(func_id)
+        if cfg:
+            try:
+                val=cfg["parser"](value)
+            except Exception as e:
+                val=f"解析错误:{e}"
+            result[func_id]={
+                "name":cfg["name"],
+                "value":val,
+                "unit":cfg.get("unit","")
+            }
+        else:
+            result[func_id]={
+                "name":"未知扩展",
+                "raw":value.hex().upper()
+            }
+    return result
+
+
 """函数parse_tlv里是截取 3部分: id 长度 数据，
    parse_ea_0003 的总里程，它是两部分 ，类型和米数，于是数据错了 出现 if len(data) < 10 
    解决方法：使用 "parser":parse_ea_0003 直接调用函数
@@ -901,7 +939,7 @@ Map_E1_to_EE = {
         },
         "EC": {
             "name": "货车扩展数据流",
-            "parser": None
+            "parser": parse_ec
         },
         "ED": {
             "name": "新能源汽车数据",
