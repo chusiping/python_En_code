@@ -77,7 +77,7 @@ def index():
     )
     files = [
         x[0]
-        for x in files[:200]
+        for x in files[:30]
     ]
     html = """
     <!DOCTYPE html>
