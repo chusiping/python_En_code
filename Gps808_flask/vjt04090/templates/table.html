@@ -2,67 +2,64 @@
 <html>
 
 <head>
+    <meta charset="utf-8">
+    <title>JT808解析结果</title>
+    <style>
+        body {
+            font-family: "Microsoft YaHei", sans-serif;
+        }
 
-<meta charset="utf-8">
+        table {
+            border-collapse: collapse;
+            margin: 20px auto;
+            width: auto;
+            max-width: 95%;
+            table-layout: auto;         /* 根据内容自动调整列宽 */
+        }
 
-<title>JT808解析结果</title>
+        th,
+        td {
+            border: 1px solid #ccc;
+            padding: 6px 10px;
+            vertical-align: top;
+        }
 
-<style>
+        th {
+            background: #f5f5f5;
+            text-align: center;
+        }
 
-table{
-    border-collapse:collapse;
-    width:90%;
-}
+        td:first-child {
+            width: 280px;               /* 字段名固定宽一点 */
+            font-weight: bold;
+            white-space: nowrap;
+        }
 
-th,td{
-    border:1px solid #ccc;
-    padding:8px;
-}
-
-th{
-    background:#eee;
-}
-
-</style>
-
+        td:last-child {
+            min-width: 300px;
+            word-break: break-all;      /* 长HEX自动换行 */
+        }
+    </style>
 </head>
 
-
 <body>
-
-
-<h2>JT808解析结果</h2>
-
-
-<table>
-
-<tr>
-<th>字段</th>
-<th>值</th>
-</tr>
-
-
-{% for item in data %}
-
-<tr>
-
-<td>
-{{item[0]}}
-</td>
-
-
-<td>
-{{item[1]}}
-</td>
-
-</tr>
-
-{% endfor %}
-
-
-</table>
-
-
+    <h2>JT808解析结果</h2>
+    <table>
+        <tr>
+            <th>字段</th>
+            <th>值</th>
+        </tr>
+        {% for item in data %}
+        <tr>
+            <td>
+                {{item[0]}}
+            </td>
+            <td>
+                {{item[1]}}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
 </body>
 
 </html>
