@@ -1,6 +1,7 @@
-from flask import Flask, render_template, render_template_string
+from flask import request, Flask, render_template, render_template_string
 import json
 import os
+
 app = Flask(__name__)
 RESULT_DIR = "result"
 # ===============================
@@ -55,6 +56,12 @@ def flatten_json(data, parent=""):
 # ===============================
 @app.route("/")
 def index():
+    # 默认显示50条
+    limit = request.args.get(
+        "limit",
+        default=30,
+        type=int
+    )
     files = []
     if not os.path.exists(RESULT_DIR):
         os.makedirs(RESULT_DIR)
@@ -77,7 +84,7 @@ def index():
     )
     files = [
         x[0]
-        for x in files[:30]
+        for x in files[:limit]
     ]
     html = """
     <!DOCTYPE html>
@@ -130,6 +137,6 @@ def view(filename):
 if __name__ == "__main__":
     app.run(
         host="0.0.0.0",
-        port=7534,
+        port=7535,
         debug=True
     )
