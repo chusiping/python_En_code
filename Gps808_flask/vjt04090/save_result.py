@@ -10,11 +10,22 @@ def save_result(result):
         "result",
         exist_ok=True
     )
+
     # 文件名
-    filename = datetime.now().strftime(
-        "%Y%m%d_%H%M%S"
+    # 获取手机号和消息ID，没有则使用unknown
+    phone = str(result.get("终端号", "unknown"))
+    msg_id = str(result.get("消息ID", "unknown"))
+
+    # 去掉消息ID里的[]（如果有）
+    msg_id = msg_id.replace("[", "").replace("]", "")
+
+    # 生成文件名：手机号_消息ID_年月日时分秒_序号.json
+    filename = (
+        f"{phone}_{msg_id}_"
+        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
+        f"{counter:06d}.json"
     )
-    filename += f"_{counter:06d}.json"
+
     filepath = os.path.join(
         "result",
         filename
