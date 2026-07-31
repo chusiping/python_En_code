@@ -13,7 +13,12 @@ def save_result(result):
 
     # 文件名
     # 获取手机号和消息ID，没有则使用unknown
-    phone = str(result.get("终端号", "unknown"))
+    phone = str(
+        result.get("终端号")
+        or result.get("终端手机号")
+        or result.get("手机号")
+        or "unknown"
+    )
     msg_id = str(result.get("消息ID", "unknown"))
 
     # 去掉消息ID里的[]（如果有）
