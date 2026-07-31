@@ -1,8 +1,9 @@
 import re
 from openpyxl import load_workbook
 from collections import defaultdict
+from datetime import datetime, time
 
-xlsx_path = r'config_20260601223310right.xlsx'
+xlsx_path = r'C:\Users\Administrator\Desktop\8月\config_20260801000000.xlsx'
 output_path = r'rt.txt'
 
 wb = load_workbook(xlsx_path)
@@ -115,11 +116,14 @@ with open(output_path, 'w', encoding='utf-8') as f:
 
     f.write("\n【号码对应Excel文件统计】\n")
     phone_xlsx_count = defaultdict(set)
+    all_xlsx = set()
     for row in rows:
         phone = row[headers.index('terminal_phone')]
         xlsx = row[headers.index('excel_file')]
         if phone and xlsx:
             phone_xlsx_count[phone].add(xlsx)
+            all_xlsx.add(xlsx)
+    f.write(f"  Excel文件总数(去重): {len(all_xlsx)}\n")
     for phone, xlsx_set in sorted(phone_xlsx_count.items(), key=lambda x: -len(x[1])):
         f.write(f"  {phone}: {len(xlsx_set)}个文件\n")
         for xf in sorted(xlsx_set):
@@ -162,5 +166,47 @@ with open(output_path, 'w', encoding='utf-8') as f:
     else:
         f.write("\n【校验结果】\n")
         f.write("  未发现格式错误\n")
+
+    ################################
+    f.write("\n【每小时数据统计】\n")
+
+    hour_count = defaultdict(int)
+
+    time_col = headers.index("start_time")
+
+    for row in rows:
+        t = row[time_col]
+        if t is None:
+            continue
+
+        hour = None
+
+        # ---------- 1. Excel公式 ----------
+        if isinstance(t, str) and t.startswith("="):
+            m = re.search(r"TIME\s*\(\s*(\d+)", t, re.IGNORECASE)
+            if m:
+                hour = int(m.group(1))
+
+        # ---------- 2. Excel计算后的time对象 ----------
+        elif hasattr(t, "hour"):
+            hour = t.hour
+
+        # ---------- 3. 普通字符串 ----------
+        else:
+            s = str(t)
+            m = re.match(r"(\d{1,2}):", s)
+            if m:
+                hour = int(m.group(1))
+
+        if hour is not None and 0 <= hour <= 23:
+            hour_count[hour] += 1
+
+    total = 0
+    for h in range(24):
+        cnt = hour_count[h]
+        total += cnt
+        f.write(f"  {h:02d}点: {cnt}条\n")
+
+    f.write(f"\n  合计: {total}条\n")
 
 print(f"校验完成，结果已写入 {output_path}")
