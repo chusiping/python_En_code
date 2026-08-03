@@ -46,6 +46,11 @@ def save_result(result):
     # 去掉消息ID里的[]（如果有）
     msg_id = msg_id.replace("[", "").replace("]", "")
 
+    # 平台通用应答(8001)不保存
+    if msg_id == "8001":
+        print("8001应答不记录json文件")
+        return None
+
     # 生成文件名：手机号_消息ID_年月日时分秒_序号.json
     filename = (
         f"{phone}_{msg_id}_"
@@ -63,6 +68,7 @@ def save_result(result):
         ),
         "data": result
     }
+
     with open(
         filepath,
         "w",
