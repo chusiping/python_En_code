@@ -91,5 +91,13 @@ info = f"""
 
     字节是数据存储单位规定：1 byte = 8 bit
     0111 1110 : 这 8 个二进制位，就是一个字节
+
+
+    byte = 1字节
+    2byte = 2字节
+    Nbyte = N个字节
+    bit = 位（1位，不是字节）
+    WORD = 通常2字节
+    DWORD = 通常4字节
 """
 # print(info)
