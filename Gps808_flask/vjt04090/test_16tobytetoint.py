@@ -38,11 +38,17 @@
 
 
 # 126是字符串 转 二进制 和 十六进制 怎么写
-s = "126"
-n = int(s)
-print(f"字符串126 转整数 {n}") 
-print(f"字符串126 十六进制 {hex(n)}") 
+# s = "126"
+# n = int(s)
+# print(f"字符串126 转整数 {n}") 
+# print(f"字符串126 十六进制 {hex(n)}") 
 
+
+b = bytes.fromhex("0180") #A064
+b2 = int.from_bytes(b,"big")
+print(f"0b{b2:016b}")
+c=int.from_bytes(b,"big") & 0x8000
+print(c)
 
 info = f"""
 1   JT808 收到的数据通常不是字符串

@@ -839,7 +839,7 @@ def parse_ee(payload):
 from parse_carextentdataflow import TRUCK_EXT_CONFIG
 
 def parse_ec(hexstr):
-    data = bytes.fromhex(hexstr)
+    data = bytes.fromhex(hexstr) #把十六进制字符串转换成 Python 的 bytes（二进制字节）对象
     result={}
     index=0
     while index < len(data):

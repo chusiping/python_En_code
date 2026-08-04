@@ -40,15 +40,28 @@ def parse_ascii(b):
 
 def parse_work_status(b, bit_names):
     """
-    环卫车工况bit解析
+    环卫车工况bit解析 (完全适配 0 和 1 都有含义的复合工况)
     b: 4字节
-    bit_names: {bit:名称}
+    bit_names: {bit: 名称字符串 或 {0:文本, 1:文本}}
     """
-    value=int.from_bytes(b,"little")
-    result={}
-    for bit,name in bit_names.items():
-        result[name] = bool(value & (1 << bit))
+    value = int.from_bytes(b, "big")
+    result = {}
+    for bit, config in bit_names.items():
+        if bit >= 32:  # 安全防御，防止超出4字节
+            continue
+        # 核心：检查该位是 1 还是 0
+        is_on = bool(value & (1 << bit))
+        # 情况 A：如果配置是个字典，说明 0 和 1 都有明确的文本含义
+        if isinstance(config, dict):
+            # 找到对应状态的名字，比如 BIT6 的 "功能切换"
+            key_name = config.get("name", f"BIT{bit}")
+            # 根据 0 或 1 取出对应的文字
+            result[key_name] = config[1] if is_on else config[0]
+        # 情况 B：如果配置只是普通字符串，代表 1 是开启，0 是关闭
+        else:
+            result[config] = "开" if is_on else "关"
     return result
+
 
 TRUCK_EXT_CONFIG = {
 
@@ -76,8 +89,8 @@ TRUCK_EXT_CONFIG = {
         "name":"OBD剩余油量",
         "len":2,
         "parser":lambda b:{
-            "value":(int.from_bytes(b,"big") & 0x7FFF)/10,
-            "unit":"L" if int.from_bytes(b,"big")&0x8000 else "%"
+            "value":(int.from_bytes(b,"big") & 0x7FFF)/10,  #0x7FFF 的完整二进制是：0111 1111 1111 1111（共 16 位，最高位是 0，其余 15 位都是 1）。
+            "unit":"L" if int.from_bytes(b,"big")&0x8000 else "%" #0x8000 的二进制是：1000 0000 0000 0000
         }
     },
 
@@ -818,27 +831,29 @@ TRUCK_EXT_CONFIG = {
             7:"总电源开",
         })
     },
-    "5224":{
-        "name":"环卫车工况(环卫面板_4扩展)",
-        "len":4,
-        "parser":lambda b:parse_work_status(b,{
-            0:"电源开",
-            1:"作业开始",
-            2:"照明",
-            3:"除尘",
-            4:"左扫",
-            5:"右扫",
-            6:"扫路",
-            7:"纯洗",
-            8:"喷雾",
-            9:"自洁",
-            10:"强力/标准",
-            11:"左冲洗",
-            12:"右冲洗",
-            13:"垃圾桶开门",
-            14:"垃圾桶倾翻",
-            15:"垃圾桶关门",
-            16:"垃圾桶回位",
+    "5224": {
+        "name": "环卫车工况(环卫面板_4扩展)",
+        "len": 4,
+        "parser": lambda b: parse_work_status(b, {
+            0: "电源开",
+            1: "作业开始",
+            2: "照明",
+            3: "除尘",
+            4: "左扫",
+            5: "右扫",
+            # BIT6: 1代表扫路，0代表洗扫
+            6: { "name": "清扫模式", 0: "洗扫", 1: "扫路" }, 
+            7: "纯洗",
+            8: "喷雾",
+            9: "自洁",
+            # BIT10: 1代表强力，0代表标准
+            10: { "name": "作业强度", 0: "标准", 1: "强力" }, 
+            11: "左冲洗",
+            12: "右冲洗",
+            13: "垃圾桶开门",
+            14: "垃圾桶倾翻",
+            15: "垃圾桶关门",
+            16: "垃圾桶回位",
         })
     }
 }
