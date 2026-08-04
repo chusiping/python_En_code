@@ -394,13 +394,12 @@ TRUCK_EXT_CONFIG = {
     },
 
 
-    "5112":{
-        "name":"MIL状态",
-        "len":1,
-        "parser":lambda b:"点亮" if b[0]==1 else "未点亮"
+    "5112": {
+        "name": "MIL状态",
+        "len": 1,
+        "parser": lambda b: "无效" if b[0] == 0xFE else ("点亮" if b[0] == 1 else "未点亮"),
+        "unit": ""
     },
-
-
     "511F":{
         "name":"发动机实时负载",
         "len":1,
