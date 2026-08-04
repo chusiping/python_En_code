@@ -107,3 +107,66 @@ info = f"""
     DWORD = 通常4字节
 """
 # print(info)
+
+def format_and_print_hex(raw_hex_str):
+    """
+    将一连串紧凑的十六进制字符串，按照 ID、长度、数据的格式分行打印
+    """
+    # 1. 清理字符串：去掉可能存在的空格或换行符，全部转大写
+    clean_hex = raw_hex_str.replace(" ", "").replace("\n", "").replace("\r", "").upper()
+    
+    i = 0
+    total_len = len(clean_hex)
+    
+    print("=" * 25)
+    print("ID   Len  Data")
+    print("-" * 25)
+    
+    while i < total_len:
+        # 安全防御：如果剩下的字符连 ID(4) 和 Len(2) 都凑不够，说明数据包不完整，直接退出
+        if i + 6 > total_len:
+            print(f"[剩余未解析的不完整数据: {clean_hex[i:]}]")
+            break
+            
+        # 2. 提取 ID（2字节 = 4个字符）
+        data_id = clean_hex[i:i+4]
+        
+        # 3. 提取 长度（1字节 = 2个字符），并转换成十进制整数
+        len_hex = clean_hex[i+4:i+6]
+        try:
+            data_len = int(len_hex, 16)
+        except ValueError:
+            print(f"[错误] 长度字段 {len_hex} 无法解析为数字，解析中止。")
+            break
+            
+        # 4. 根据提取出来的长度，计算出真实数据应该占用的字符数 (Len * 2)
+        data_chars_count = data_len * 2
+        
+        # 安全防御：防止算出来的长度超出了字符串总长度
+        if i + 6 + data_chars_count > total_len:
+            print(f"[错误] ID {data_id} 声明数据长度为 {data_len} 字节，但后续数据不足。")
+            print(f"当前剩余数据: {clean_hex[i:]}")
+            break
+            
+        # 5. 提取真正的数据
+        data_content = clean_hex[i+6 : i+6+data_chars_count]
+        
+        # 6. 漂亮地打印出来（:4 和 :2 用于控制格式对齐）
+        print(f"{data_id} {len_hex} {data_content}")
+        
+        # 7. 指针向后移动，处理下一个数据块
+        i += 6 + data_chars_count
+        
+    print("=" * 25)
+
+# ----------------- 🧪 现场测试 -----------------
+
+# 模拟你从串口拿到的一连串紧凑的、没排过版的十六进制长字符串
+parse_ec_hexstr = (
+    "60C002048560D0010C62F00201806050017660F001EE633001C86490011660A00251DE"
+    "5005020069500A0202715112010051010192510201875103022C0A510402233E510501"
+    "575107023D935108023ED65109020008510A0101510C014C52140206415224040000003352250400000033"
+)
+
+# 运行函数
+format_and_print_hex(parse_ec_hexstr)
