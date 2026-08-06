@@ -48,53 +48,20 @@ def phone_to_bcd(phone:str):
     return bytes(result)
 
 def split_hex(hexstr):
-    """
-    JT/T808 解转义
-    输入: 十六进制字符串
-    例如: 02007D027D01AB
-    输出:
-    02007E7DAB
-    """
+    # 1. 统一转大写，去掉空格和换行
     hexstr = hexstr.upper().replace(" ", "").replace("\n", "")
-    result = []
-    idx = 0
+    
+    # 2. 健壮性检查：十六进制字符串必须是偶数长度
+    if len(hexstr) % 2 != 0:
+        raise ValueError(f"十六进制字符串长度为奇数({len(hexstr)})，数据不完整")
+    
+    # 3. 剥离首尾的 7E
+    if hexstr.startswith("7E"): hexstr = hexstr[2:]
+    if hexstr.endswith("7E"): hexstr = hexstr[:-2]
+    
+    # 4. 直接替换（顺序不能错：先 01 后 02）
+    return hexstr.replace("7D01", "7D").replace("7D02", "7E")
 
-    while idx < len(hexstr):
-
-        # 判断是否遇到7D
-        if hexstr[idx:idx+2] == "7D":
-
-            # 防止越界
-            if idx + 4 > len(hexstr):
-                raise ValueError("转义码不完整")
-
-            next_byte = hexstr[idx+2:idx+4]
-
-            if next_byte == "01":
-                # 7D01 -> 7D
-                result.append("7D")
-
-            elif next_byte == "02":
-                # 7D02 -> 7E
-                result.append("7E")
-
-            else:
-                print(
-                    "附近数据:",
-                    hexstr[idx-20:idx+20]
-                )    
-                # 非法转义
-                raise ValueError(
-                    f"非法转义: 7D{next_byte}, 位置:{idx//2}字节"
-                )
-
-            idx += 4
-
-        else:
-            result.append(hexstr[idx:idx+2])
-            idx += 2
-
-    return "".join(result)
 
 def parse_bcd_time(hexstr):
     """
