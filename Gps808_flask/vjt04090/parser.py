@@ -4,21 +4,6 @@ from PARSER_E1_to_EE import *
 
 # 第一处修改：增加消息分发 增加一个入口：
 def parse_0200(hexstr: str):
-    """
-    JT/T 808 0200 位置信息汇报
-    支持 VJT.04.090 扩展外设数据
-
-    输入:
-        已经去掉空格的HEX字符串
-        包含:
-        0200消息头 + 消息体
-
-    注意:
-        进入本函数前应该已经完成:
-        7E去除
-        7D转义恢复
-        XOR校验
-    """
     hexstr = split_hex(hexstr) #去空格去换行转大写
     def take(n):
         nonlocal idx
@@ -158,17 +143,7 @@ def parse_0200(hexstr: str):
 
         att_info = parse_tlv(tlv_data,1,Map_E1_to_EE)
         result["附加信息"].append(att_info)
-
-        # result["附加信息"].append(   # 暂时不用，用上一行代替
-        #     {
-        #         "类型":"JT808标准附加",
-        #         "ID":item_id,
-        #         "长度":length,
-        #         "数据":parse_external_441(value) 
-        #     }
-        # )
-
-
+        
     # 校验码
     result["校验码"] = take(2)
     return result
@@ -927,6 +902,75 @@ def parse_0xE1_0xFD(id,length,data):
     }
     return result
 
+# 通用处理扩展信息
+def parse_extra_info(hexstr: str, start_idx: int, body_end: int, map_config=None) -> tuple:
+    """
+    通用 JT808 附加信息解析函数
+    :param hexstr: 完整的十六进制字符串（已转大写无空格）
+    :param start_idx: 附加信息在字符串中的起始指针位置
+    :param body_end: 消息体结束的指针位置
+    :param map_config: 传入 parse_tlv 使用的配置映射（默认使用 Map_E1_to_EE）
+    :return: (extra_list, updated_idx) 返回解析后的附加信息列表和更新后的指针位置
+    """
+    if map_config is None:
+        map_config = Map_E1_to_EE  # 默认使用您原有的映射
+        
+    extra_list = []
+    idx = start_idx
+
+    while idx < body_end:
+        remain = hexstr[idx:body_end]   # 日期之后开始到消息体结束 = 所有附加信息
+        if len(remain) < 2:
+            break
+            
+        # ---------------------
+        # 1. VJT扩展外设 (3001-4FFF)
+        # ---------------------
+        if len(remain) >= 6:    # 判断剩余的数据长度是否至少有 6 个十六进制字符
+            func_id = int(remain[:4], 16)
+            if 0x3001 <= func_id <= 0x4FFF:
+                func_id_hex = hexstr[idx : idx + 4]
+                idx += 4
+                length = int(hexstr[idx : idx + 2], 16)
+                idx += 2
+                value = hexstr[idx : idx + length * 2]
+                idx += length * 2
+                
+                extra_list.append({
+                    "类型": "VJT扩展外设",
+                    "ID": func_id_hex,
+                    "长度": length,
+                    "数据": value
+                })
+                continue
+
+        # ---------------------
+        # 2. 标准/自定义 TLV 附加信息
+        # ---------------------
+        # 至少需要 ID(1字节) + LEN(1字节) = 4个字符
+        if idx + 4 > body_end:
+            break
+            
+        # 读取长度（ID占2字符，LEN占2字符，所以LEN在 idx+2 到 idx+4）
+        length = int(hexstr[idx + 2 : idx + 4], 16)
+        # 整个 TLV 长度 = ID(2) + LEN(2) + VALUE(length * 2)
+        total_len = 4 + length * 2
+        
+        # 防止越界，如果计算出的总长度超过了剩余长度则终止
+        if idx + total_len > body_end:
+            break
+            
+        # 直接取完整 TLV
+        tlv_data = hexstr[idx : idx + total_len]
+        # 移动指针
+        idx += total_len
+
+        # 调用原有的解析方法
+        att_info = parse_tlv(tlv_data, 1, map_config)
+        extra_list.append(att_info)
+        
+    return extra_list, idx
+
 
 # parse_0200_body没有：0200 消息体属性 手机号 流水号
 def parse_0200_body(hexstr):
@@ -974,10 +1018,18 @@ def parse_0200_body(hexstr):
     result["基础信息"]["时间"] = parse_bcd_time(time_bcd)
     
     # 剩余就是位置附加信息
-    remain = hexstr[idx:]
-    if remain:
-        result["附加信息原始"] = remain
+    # remain = hexstr[idx:]
+    # if remain:
+    #     result["附加信息原始"] = remain
         
+    body_end = len(hexstr) # 这里的输入单纯是body，所以结束位置就是字符串总长度
+    if idx < body_end:
+        # 1. 保存一份原始 remain（可选）
+        # result["附加信息原始"] = hexstr[idx:] 
+        # 2. 调用抽离出来的通用解析函数
+        # 传入：当前字符串、当前光标 idx、结束位置 body_end
+        # 返回：解析好的列表，以及更新后的新 idx
+        result["附加信息"], idx = parse_extra_info(hexstr, idx, body_end)
     return result, idx
 
 
