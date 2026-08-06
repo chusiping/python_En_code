@@ -803,7 +803,20 @@ def parse_alarm_flag(hexstr):
         9: "终端LCD或显示器故障",
         10: "TTS模块故障",
         11: "摄像头故障",
-        12: "保留"
+        12: "保留",
+        # --------- 以下为新补全的标志位 ---------
+        13: "超速预警",
+        18: "当天累计驾驶超时",
+        19: "超时停车",
+        20: "进出区域",
+        21: "进出路线",
+        22: "路段行驶时间不足/过长",
+        23: "路线偏离报警",
+        24: "车辆VSS故障",
+        25: "车辆油量异常",
+        26: "车辆被盗(通过车辆防盗器)",
+        27: "车辆非法点火",
+        28: "车辆非法位移"
     }
     # HEX转整数
     flag = int(hexstr,16)
@@ -812,8 +825,8 @@ def parse_alarm_flag(hexstr):
         if flag & (1 << bit):
             result.append(
                 {
-                    "bit":bit,
-                    "报警":desc
+                    "位移":bit,
+                    "报警内容":desc
                 }
             )
     return result
@@ -1057,17 +1070,14 @@ def parse_0704(hexstr):
         value = hexstr[idx:idx+n]
         idx += n
         return value
-    result = {
-        "消息ID":"0704",
-        "位置数据":[]
-    }
+    result = {"消息ID":"0704"}
     take(4)      # 0704
     body_attr = take(4)
     phone = take(12)
     serial = take(4)
     result["消息属性"] = body_attr
     result["终端号"] = phone
-    result["流水号"] = str(serial)
+    result["流水号"] = int(serial, 16)
     count = int(
         take(4),
         16
@@ -1081,7 +1091,7 @@ def parse_0704(hexstr):
     
     result["类型"] = type_mapping.get(data_type, f"未知类型({data_type})")
 
-    
+    result["位置数据"]= []
     for i in range(count):
         length_smal = take(4)
         length = int(length_smal,16)
