@@ -936,60 +936,50 @@ def parse_0200_body(hexstr):
         value = hexstr[idx:idx+n]
         idx += n
         return value
+    
     result = {
         "基础信息": {},
         "附加信息": []
     }
-    # 报警标志 DWORD
+    
+    # 1. 报警标志 (DWORD -> 8位HEX)
     alarm = take(8)
     result["基础信息"]["报警报文"] = alarm
     result["基础信息"]["报警内容"] = parse_alarm_flag(alarm)
-    # 状态 DWORD
+    
+    # 2. 状态 (DWORD -> 8位HEX)
     status = take(8)
     result["基础信息"]["状态"] = status
     result["基础信息"]["状态内容"] = parse_status_flag(status)
-    # 纬度 DWORD
-    lat = int(
-        take(8),
-        16
-    )
-    result["基础信息"]["纬度"] = (
-        lat & 0x7FFFFFFF
-    ) / 1000000
-    # 经度 DWORD
-    lng = int(
-        take(8),
-        16
-    )
-    result["基础信息"]["经度"] = (
-        lng & 0x7FFFFFFF
-    ) / 1000000
-    # 高程 WORD
-    altitude = int(
-        take(4),
-        16
-    )
-    result["基础信息"]["海拔"] = altitude
-    # 速度 WORD
-    speed = int(
-        take(4),
-        16
-    )
-    result["基础信息"]["速度"] = speed / 10
-    # 方向 WORD
-    direction = int(
-        take(4),
-        16
-    )
-    result["基础信息"]["方向"] = direction
-    # 时间 BCD[6]
+    
+    # 3. 纬度 (DWORD -> 单行 int 转换与除法)
+    lat = int(take(8), 16)
+    result["基础信息"]["纬度"] = (lat & 0x7FFFFFFF) / 1000000
+    
+    # 4. 经度 (DWORD -> 单行 int 转换与除法)
+    lng = int(take(8), 16)
+    result["基础信息"]["经度"] = (lng & 0x7FFFFFFF) / 1000000
+    
+    # 5. 高程 (WORD -> 单行 int 转换)
+    result["基础信息"]["海拔"] = int(take(4), 16)
+    
+    # 6. 速度 (WORD -> 单行 int 转换与除法)
+    result["基础信息"]["速度"] = int(take(4), 16) / 10
+    
+    # 7. 方向 (WORD -> 单行 int 转换)
+    result["基础信息"]["方向"] = int(take(4), 16)
+    
+    # 8. 时间 (BCD[6] -> 12位HEX)
     time_bcd = take(12)
     result["基础信息"]["时间"] = parse_bcd_time(time_bcd)
+    
     # 剩余就是位置附加信息
     remain = hexstr[idx:]
     if remain:
         result["附加信息原始"] = remain
+        
     return result, idx
+
 
 def parse_0704(hexstr):
     if any(x in hexstr.upper() for x in ["7D01", "7D02"]):
