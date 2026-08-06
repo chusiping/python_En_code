@@ -173,15 +173,7 @@ def parse_0200(hexstr: str):
     result["校验码"] = take(2)
     return result
 def parse_jt808_packet(hexstr, escaped=False):
-    if escaped:
-        hexstr = split_hex(hexstr)
-    # 后面正常解析
-    # 去掉7E
-    if hexstr.startswith("7E"):
-        hexstr = hexstr[2:]
-    if hexstr.endswith("7E"):
-        hexstr = hexstr[:-2]
-    # 前4位就是消息ID
+    hexstr = split_hex(hexstr)
     msg_id = hexstr[:4]
     if msg_id == "0200":
         return parse_0200(hexstr)
@@ -193,6 +185,8 @@ def parse_jt808_packet(hexstr, escaped=False):
         return parse_0002(hexstr)
     elif msg_id == "0205":
         return parse_0205(hexstr)
+    elif msg_id == "0704":
+        return parse_0704(hexstr)
     else:
         return {
             "msg_id": msg_id,
@@ -990,4 +984,108 @@ def parse_0xE1_0xFD(id,length,data):
     return result
 
 
+# parse_0200_body没有：0200 消息体属性 手机号 流水号
+def parse_0200_body(hexstr):
+    idx = 0
+    def take(n):
+        nonlocal idx
+        value = hexstr[idx:idx+n]
+        idx += n
+        return value
+    result = {
+        "基础信息": {},
+        "附加信息": []
+    }
+    # 报警标志 DWORD
+    alarm = take(8)
+    result["基础信息"]["报警标志"] = alarm
+    result["基础信息"]["报警内容"] = parse_alarm_flag(alarm)
+    # 状态 DWORD
+    status = take(8)
+    result["基础信息"]["状态"] = status
+    result["基础信息"]["状态内容"] = parse_status_flag(status)
+    # 纬度 DWORD
+    lat = int(
+        take(8),
+        16
+    )
+    result["基础信息"]["纬度"] = (
+        lat & 0x7FFFFFFF
+    ) / 1000000
+    # 经度 DWORD
+    lng = int(
+        take(8),
+        16
+    )
+    result["基础信息"]["经度"] = (
+        lng & 0x7FFFFFFF
+    ) / 1000000
+    # 高程 WORD
+    altitude = int(
+        take(4),
+        16
+    )
+    result["基础信息"]["海拔"] = altitude
+    # 速度 WORD
+    speed = int(
+        take(4),
+        16
+    )
+    result["基础信息"]["速度"] = speed / 10
+    # 方向 WORD
+    direction = int(
+        take(4),
+        16
+    )
+    result["基础信息"]["方向"] = direction
+    # 时间 BCD[6]
+    time_bcd = take(12)
+    result["基础信息"]["时间"] = parse_bcd_time(time_bcd)
+    # 剩余就是位置附加信息
+    remain = hexstr[idx:]
+    if remain:
+        result["附加信息原始"] = remain
+    return result, idx
 
+def parse_0704(hexstr):
+    if any(x in hexstr.upper() for x in ["7D01", "7D02"]):
+        print("字符串中包含需要反转义的字符")
+        return {}
+    idx = 0
+    def take(n):
+        nonlocal idx
+        value = hexstr[idx:idx+n]
+        idx += n
+        return value
+    result = {
+        "消息ID":"0704",
+        "位置数据":[]
+    }
+    take(4)      # 0704
+    body_attr = take(4)
+    phone = take(12)
+    serial = take(4)
+    result["消息属性"] = body_attr
+    result["终端号"] = phone
+    result["流水号"] = str(serial)
+    count = int(
+        take(4),
+        16
+    )
+    data_type = take(2)
+    result["数据项数量"] = count
+    type_mapping = {
+            "00": "盲点补报",
+            "01": "正常批量数据"
+        }
+    
+    result["类型"] = type_mapping.get(data_type, f"未知类型({data_type})")
+
+    
+    for i in range(count):
+        length_smal = take(4)
+        length = int(length_smal,16)
+        body = take(length*2)
+        pos, used = parse_0200_body(body)
+        result["位置数据"].append(pos)
+    return result
