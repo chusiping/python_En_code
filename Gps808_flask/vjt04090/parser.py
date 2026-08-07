@@ -27,12 +27,12 @@ def parse_0200(hexstr: str):
     result["消息ID"] = msg_id
     # ==========消息体属性===============
     body_attr = take(4)
-    body_len = int(body_attr,16) & 0x03FF  #n个字节 JT808消息体长度 body_len，不包含手机号和流水号
+    body_len = int(body_attr,16) & 0x03FF  #n个字节 JT808消息体长度 body_len，不包含phone和流水号
     # result["基础信息"]["消息体属性"] = body_attr 不显示
     result["基础信息"]["消息体长度"] = body_len #流水号后开始到检验码前结束的部分
-    # ==========终端手机号===============
+    
     phone = take(12)
-    result["基础信息"]["手机号"] = phone
+    result["基础信息"]["终端号"] = phone
     # ==========流水号===============
     serial = take(4)
     result["基础信息"]["流水号"] = int(serial,16) 
@@ -174,7 +174,7 @@ def parse_0900(hexstr):
     body=hexstr[4:]     # 跳过消息ID
     body_attr=body[:4]  # 消息体属性
     body_len = int(body_attr, 16) & 0x03FF     #  新增这一句 JT808消息体长度(低10位)
-    phone=body[4:16]    # 手机号
+    phone=body[4:16]    # 终端号
     sn=body[16:20]      # 流水号
     data = body[20:20 + body_len * 2]      # 透传数据 这里只取消息体，不要把校验码取进来
 
@@ -210,7 +210,7 @@ def parse_8001(hexstr):
         hexstr[4:8],
         16
     )
-    # 终端手机号 6字节BCD
+
     result["终端号"] = hexstr[8:20]
     # 流水号
     result["流水号"] = int(
@@ -274,14 +274,14 @@ def parse_0002(hexstr):
     )
     result["是否分包"] = is_subpackage
     # =========================
-    # 终端手机号 BCD[6]
+
     # =========================
     phone_hex = hexstr[8:20]
     phone = ""
     for i in range(0,12,2):
         phone += phone_hex[i:i+2]
     # 去掉前导0
-    result["终端手机号"] = phone.lstrip("0")
+    result["终端号"] = phone.lstrip("0")
     # =========================
     # 消息流水号
     # =========================
@@ -339,13 +339,13 @@ def parse_0205(hexstr):
     )
     result["是否分包"] = is_subpackage
     # =========================
-    # 终端手机号 BCD[6]
+
     # =========================
     phone_hex = hexstr[8:20]
     phone = ""
     for i in range(0,12,2):
         phone += phone_hex[i:i+2]
-    result["终端手机号"] = phone.lstrip("0")
+    result["终端号"] = phone.lstrip("0")
     # =========================
     # 消息流水号
     # =========================
@@ -972,7 +972,7 @@ def parse_extra_info(hexstr: str, start_idx: int, body_end: int, map_config=None
     return extra_list, idx
 
 
-# parse_0200_body没有：0200 消息体属性 手机号 流水号
+# parse_0200_body没有：0200 消息体属性 phone 流水号
 def parse_0200_body(hexstr):
     idx = 0
     def take(n):
