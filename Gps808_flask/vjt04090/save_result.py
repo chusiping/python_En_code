@@ -22,10 +22,12 @@ def check_condition(d):
     """递归检查字典中是否包含指定的键值对规则"""
     if not isinstance(d, dict):
         return False
-    # 定义目标规则：值为空则只检查键是否存在；值不为空则需要 name 包含该字符串
+    
+    # 你最喜欢的直观配置格式，完全保留！
     target_rules = {
         "5224": "环卫车工况",
-        "5223": ""
+        "5223": "",
+        "终端号": "018761241945",  # 直接加在这里
     }
     
     # 1. 检查当前层级的键
@@ -33,11 +35,18 @@ def check_condition(d):
         str_key = str(key)
         if str_key in target_rules:
             target_val = target_rules[str_key]
+            
             # 规则1：配置的值为空，只要键存在就直接返回 True
             if not target_val:
                 return True
-            # 规则2：配置的值不为空，需要 item 是字典，且 item["name"] 包含该值
-            if isinstance(item, dict) and "name" in item and target_val in str(item["name"]):
+            
+            # 【核心修改点】规则2：如果 item 直接就是字符串或数字，直接判断是否包含
+            if not isinstance(item, dict):
+                if target_val in str(item):
+                    return True
+            
+            # 规则3：如果 item 是字典（兼容你原本的环卫车工况逻辑）
+            elif "name" in item and target_val in str(item["name"]):
                 return True
                 
     # 2. 如果当前层的所有键都不满足条件，再继续向子层级深挖递归
@@ -50,6 +59,7 @@ def check_condition(d):
                 if isinstance(sub_item, dict) and check_condition(sub_item):
                     return True
     return False
+
 
 
 def save_result(result):
@@ -67,7 +77,6 @@ def save_result(result):
     )
 
     # 文件名
-    # 获取手机号和消息ID，没有则使用unknown
     phone = str(
         find_value(result, "终端号")
         or find_value(result, "终端手机号")
@@ -90,7 +99,7 @@ def save_result(result):
         print(f"{msg_id}应答不记录json文件") 
         return None
 
-    # 生成文件名：手机号_消息ID_年月日时分秒_序号.json
+    # 生成文件名：
     filename = (
         f"{phone}_{msg_id}_"
         f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_"
