@@ -90,7 +90,6 @@ def save_result(result):
         or "unknown"
     ).replace("[", "").replace("]", "")
 
-
     # 去掉消息ID里的[]（如果有）
     msg_id = msg_id.replace("[", "").replace("]", "")
 
@@ -99,6 +98,12 @@ def save_result(result):
         print(f"{msg_id}应答不记录json文件") 
         return None
 
+    now = datetime.now()
+    month_dir = now.strftime("%Y%m")          # 例如: 202608
+    hour_dir = now.strftime("%m%d%H")         # 例如: 080811 (8月8日11点)
+    target_dir = os.path.join("result", month_dir, hour_dir)
+    os.makedirs(target_dir, exist_ok=True)
+
     # 生成文件名：
     filename = (
         f"{phone}_{msg_id}_"
@@ -106,26 +111,8 @@ def save_result(result):
         f"{counter:06d}.json"
     )
 
-    filepath = os.path.join(
-        "result",
-        filename
-    )
-    data = {
-        "time": datetime.now().strftime(
-            "%Y-%m-%d %H:%M:%S"
-        ),
-        "data": result
-    }
-
-    with open(
-        filepath,
-        "w",
-        encoding="utf-8"
-    ) as f:
-        json.dump(
-            data,
-            f,
-            ensure_ascii=False,
-            indent=4
-        )
+    filepath = os.path.join(target_dir,filename)
+    data = {"time": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),"data": result}
+    with open(filepath, "w",encoding="utf-8") as f:
+        json.dump(data,f,ensure_ascii=False,indent=4)
     return filepath
