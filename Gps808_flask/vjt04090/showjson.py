@@ -32,7 +32,7 @@ def flatten_json(data, parent=""):
 # ===============================
 @app.route("/")
 def index():
-    limit = request.args.get("limit", default=30, type=int)
+    limit = request.args.get("limit", default=100, type=int)
     files = []
     
     if not os.path.exists(RESULT_DIR):
@@ -66,7 +66,7 @@ def index():
     </head>
     <body>
     <h2>JT808解析结果</h2>
-    <ul>
+    <ol>
     {% for f in files %}
         <li>
             <a href="/view/{{ f }}" target="_blank">
@@ -74,7 +74,7 @@ def index():
             </a>
         </li>
     {% endfor %}
-    </ul>
+    </ol>
     </body>
     </html>
     """
