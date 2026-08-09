@@ -107,7 +107,7 @@ def client_thread(conn, addr):
     finally:
         conn.close()
         log = get_current_hour_logger()
-        log.info(f"{addr} 已断开")
+        log.info(f"已断开!!!")
 
 def start_server():
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
