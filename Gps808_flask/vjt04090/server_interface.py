@@ -71,7 +71,7 @@ def recv_all_hex(data):
 def client_thread(conn, addr):
     log = get_current_hour_logger()
 
-    log.info("\n\n")
+    log.info(" ")
     log.info(f"设备连接：{addr}")
     try:
         while True:

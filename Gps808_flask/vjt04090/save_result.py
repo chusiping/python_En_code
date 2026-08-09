@@ -65,8 +65,9 @@ def check_condition(d):
 def save_result(result):
     # 使用递归函数进行深度过滤
     if not check_condition(result):
-        print("未包含5224 ， 5223环卫车工况相关数据，跳过保存。")
-        return None
+        info = "未包含5224,5223环卫车工况相关数据,跳过保存json文件"
+        print(info)
+        return info
 
     global counter
     counter += 1
