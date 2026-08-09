@@ -718,69 +718,18 @@ def parse_3014(value):
     # hex字符串转bytes
     data = bytes.fromhex(value)
     if len(data)<5:
-        return {
-            "error":"3014长度不足"
-        }
+        return { "error":"3014长度不足"}
     # 输入
-    input_names=[
-        "IN1",
-        "IN2",
-        "IN3",
-        "IN4",
-        "IN5",
-        "IN6",
-        "IN7",
-        "IN8"
-    ]
+    input_names = ["IN1", "IN2", "IN3", "IN4", "IN5", "IN6", "IN7", "IN8"]
     result["输入状态"]={}
-    result["输入状态"].update(
-        parse_3014_io_status(
-            data[0],
-            input_names[0:4],
-            False
-        )
-    )
-    result["输入状态"].update(
-        parse_3014_io_status(
-            data[1],
-            input_names[4:8],
-            False
-        )
-    )
+    result["输入状态"].update(parse_3014_io_status(data[0], input_names[0:4], False))
+    result["输入状态"].update(parse_3014_io_status(data[1], input_names[4:8], False))
     # 输出
-    output_names=[
-        "OUT1",
-        "OUT2",
-        "OUT3",
-        "OUT4",
-        "OUT5",
-        "OUT6",
-        "5V_OUT1",
-        "5V_OUT2",
-        "12V_OUT"
-    ]
+    output_names = ["OUT1", "OUT2", "OUT3", "OUT4", "OUT5", "OUT6", "5V_OUT1", "5V_OUT2", "12V_OUT"]
     result["输出状态"]={}
-    result["输出状态"].update(
-        parse_3014_io_status(
-            data[2],
-            output_names[0:4],
-            True
-        )
-    )
-    result["输出状态"].update(
-        parse_3014_io_status(
-            data[3],
-            output_names[4:8],
-            True
-        )
-    )
-    result["输出状态"].update(
-        parse_3014_io_status(
-            data[4],
-            output_names[8:9],
-            True
-        )
-    )
+    result["输出状态"].update(parse_3014_io_status(data[2], output_names[0:4], True))
+    result["输出状态"].update(parse_3014_io_status(data[3], output_names[4:8], True))
+    result["输出状态"].update(parse_3014_io_status(data[4], output_names[8:9], True))
     return result
 #3014 输入输出状态表
 def parse_3014_io_status(byte, names, output=False):
