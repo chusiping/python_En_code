@@ -734,26 +734,18 @@ def parse_3014(value):
 #3014 输入输出状态表
 def parse_3014_io_status(byte, names, output=False):
     result = {}
-    status_map_input = {
-        0:"不支持",
-        1:"高电平",
-        2:"低电平",
-        3:"保留"
-    }
-    status_map_output = {
-        0:"不支持",
-        1:"高电平",
-        2:"低电平",
-        3:"悬空"
-    }
+    status_map_input  = {0: "不支持", 1: "高电平", 2: "低电平", 3: "保留"}
+    status_map_output = {0: "不支持", 1: "高电平", 2: "低电平", 3: "悬空"}
     status_map = status_map_output if output else status_map_input
-    for i,name in enumerate(names):
-        # 每两个bit一个状态
-        value = (byte >> (i*2)) & 0x03
-        result[name] = status_map.get(
-            value,
-            "未知"
-        )
+    
+    # 核心修改：忽略原 bit0, bit1，将整体数据右移 2 位（即高位往低位挪，使原 bit2, bit3 变成新的 bit0, bit1）
+    # 注意：在通信术语中，抛弃低位将高位对齐到低位，是用右移操作符 >> 
+    aligned_byte = byte >> 2
+    
+    for i, name in enumerate(names):
+        # 使用对齐后的数据进行每 2 个 bit 的正常提取
+        value = (aligned_byte >> (i * 2)) & 0x03
+        result[name] = status_map.get(value, "未知")
     return result
 
 # 4.32   附表_位置数据信息体 --->  4.36   附表_附加信息定义EE ---> 4.41   附表 扩展外设数据流
