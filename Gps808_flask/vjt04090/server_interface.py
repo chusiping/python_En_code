@@ -3,11 +3,11 @@ import threading
 from parser import parse_jt808_packet
 from parser_factory import *
 from protocol_load import load_protocol_config
-from log import *
 from save_result import * 
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import datetime
+import sys
 
 # TCP收到设备数据 → 判断协议 → 找解析器 → 解析 → 转明文 → 保存
 """
@@ -109,7 +109,19 @@ def client_thread(conn, addr):
         log = get_current_hour_logger()
         log.info(f"已断开!!!")
 
+def check_expire():
+    """检查是否超过试用期"""
+    # 设定截止日期（例如：2026年12月31日）
+    expire_date = datetime(2026, 12, 31) 
+    
+    if datetime.now() > expire_date:
+        print("=" * 80)
+        print("❌ 错误：配置环境系统冲突,请联系管理员jarry")
+        print("=" * 80)
+        sys.exit(1) # 强制退出程序
+
 def start_server():
+    check_expire()
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server.bind((HOST, PORT))
@@ -125,6 +137,7 @@ def start_server():
             args=(conn, addr),
             daemon=True
         ).start()
+
 if __name__ == "__main__":
     start_server()
 
