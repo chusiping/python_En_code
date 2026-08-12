@@ -7,6 +7,7 @@ from save_result import *
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import datetime
+
 import sys
 
 # TCP收到设备数据 → 判断协议 → 找解析器 → 解析 → 转明文 → 保存
@@ -112,9 +113,9 @@ def client_thread(conn, addr):
 def check_expire():
     """检查是否超过试用期"""
     # 设定截止日期（例如：2026年12月31日）
-    expire_date = datetime(2026, 12, 31) 
+    expire_date = datetime.datetime(2026, 4, 2) 
     
-    if datetime.now() > expire_date:
+    if datetime.datetime.now() > expire_date:
         print("=" * 80)
         print("❌ 错误：配置环境系统冲突,请联系管理员jarry")
         print("=" * 80)
