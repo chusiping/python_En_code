@@ -141,8 +141,8 @@ def check_expire():
             sys.exit(1)
             
         # 4. 比较时间是否过期
-        expire_date = datetime.strptime(expire_str, "%Y-%m-%d")
-        if datetime.now() > expire_date:
+        expire_date = datetime.datetime.strptime(expire_str, "%Y-%m-%d")
+        if datetime.datetime.now() > expire_date:
             print("=" * 80)
             print(f"❌ 错误：授权证书已于 {expire_str} 结束！请联系开发人员获取新证书。")
             print("=" * 80)
