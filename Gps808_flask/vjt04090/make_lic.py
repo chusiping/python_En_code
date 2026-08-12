@@ -2,7 +2,7 @@ import base64
 import hashlib
 
 # 🌟 你的专属私密密钥（绝对不能泄露，要和核心代码里的一致）
-SECRET_KEY = "VJT04_Parser_Top_Secret_123" 
+SECRET_KEY = "K9#mX!2pQ$zL7vW@eR9t" 
 
 def generate_license(expire_date_str):
     """

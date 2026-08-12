@@ -7,6 +7,8 @@ from save_result import *
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import datetime
+import base64
+import hashlib
 
 import sys
 
@@ -111,15 +113,46 @@ def client_thread(conn, addr):
         log.info(f"已断开!!!")
 
 def check_expire():
-    """检查是否超过试用期"""
-    # 设定截止日期（例如：2026年12月31日）
-    expire_date = datetime.datetime(2026, 4, 2) 
+    """动态校验外部的 license.lic 文件"""
+    SECRET_KEY = "K9#mX!2pQ$zL7vW@eR9t" # 必须与生成器完全一致
+    lic_file = "license.lic"
     
-    if datetime.datetime.now() > expire_date:
+    # 1. 检查证书文件是否存在
+    if not os.path.exists(lic_file):
         print("=" * 80)
-        print("❌ 错误：配置环境系统冲突,请联系管理员jarry")
+        print("❌ 错误：未找到授权证书文件 (license.lic)！程序无法启动。")
         print("=" * 80)
-        sys.exit(1) # 强制退出程序
+        sys.exit(1)
+        
+    try:
+        # 2. 读取并解码 Base64
+        with open(lic_file, "r", encoding="utf-8") as f:
+            encoded_content = f.read().strip()
+        
+        decoded_content = base64.b64decode(encoded_content.encode('utf-8')).decode('utf-8')
+        expire_str, client_sign = decoded_content.split("|")
+        
+        # 3. 重新计算签名，验证文件是否被客户篡改过
+        raw_data = f"{expire_str}|{SECRET_KEY}"
+        expected_sign = hashlib.sha256(raw_data.encode('utf-8')).hexdigest()
+        
+        if client_sign != expected_sign:
+            print("❌ 错误：授权证书签名无效！")
+            sys.exit(1)
+            
+        # 4. 比较时间是否过期
+        expire_date = datetime.strptime(expire_str, "%Y-%m-%d")
+        if datetime.now() > expire_date:
+            print("=" * 80)
+            print(f"❌ 错误：授权证书已于 {expire_str} 结束！请联系开发人员获取新证书。")
+            print("=" * 80)
+            sys.exit(1)
+            
+        print(f"✅ 证书通过!")
+        
+    except Exception as e:
+        print(f"❌ 错误：解析授权证书失败！原因: {e}")
+        sys.exit(1)
 
 def start_server():
     check_expire()
