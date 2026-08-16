@@ -6,24 +6,34 @@
     "configurations": [
         {
             "name": "Python: 当前文件",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
+            "cwd": "${fileDirname}",
             "program": "${file}",  // 关键：${file} 表示当前打开的文件
             "console": "integratedTerminal",
             "justMyCode": true
         },
         {
             "name": "main_v2.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/main_v2.py",
-            "args": ["--excel", "C:/Users/Administrator/Desktop/7月跑/TXLMCX1-5.xlsx", "--phone", "13301110130","--server-ip","14.23.86.188","--server-port","6608","--no-send"],
+            "args": ["--excel", "C:/Users/Administrator/Desktop/7月跑/TXLMCX1-5.xlsx","--phone", "13301110130","--server-ip","14.23.86.188","--server-port","6608","--no-send"],
+            "console": "integratedTerminal"
+            
+        },
+        {
+            "name": "main_v2_buchuan.py",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/main_v2_buchuan.py",
+            "args": ["--excel", "excle/TXLMCX1-5.xlsx","--date","2026-08-15 12:12:12", "--phone", "13301110130","--server-ip","14.23.86.188","--server-port","6608","--send"],
             "console": "integratedTerminal"
             
         },
         {
             "name": "task.py",
-            "type": "python",
+            "type": "debugpy",
             "request": "launch",
             "program": "${workspaceFolder}/task.py",
             "args": ["--no-send"],
