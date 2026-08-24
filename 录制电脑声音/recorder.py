@@ -6,6 +6,18 @@ import time
 import os
 from pydub import AudioSegment  # 引入音频转换库
 
+if getattr(sys, 'frozen', False):
+    # 如果是运行打包后的 exe
+    base_path = sys._MEIPASS
+else:
+    # 如果是直接运行 .py 脚本
+    base_path = os.path.dirname(os.path.abspath(__file__))
+
+# 强行指定 pydub 的 ffmpeg 寻找路径为当前释放的目录
+AudioSegment.converter = os.path.join(base_path, "ffmpeg.exe")
+AudioSegment.ffprobe = os.path.join(base_path, "ffprobe.exe")
+
+
 def find_stereo_mix_id():
     devices = sd.query_devices()
     for idx, d in enumerate(devices):
