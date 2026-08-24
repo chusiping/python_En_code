@@ -3,6 +3,8 @@ import soundfile as sf
 import queue
 import sys
 import time
+import os
+from pydub import AudioSegment  # 引入音频转换库
 
 def find_stereo_mix_id():
     devices = sd.query_devices()
@@ -21,37 +23,55 @@ device_info = sd.query_devices(target_device_id)
 sample_rate = int(device_info['default_samplerate'])
 channels = 2
 
-filename = f"record_{int(time.time())}.wav" # 使用时间戳，防止文件冲突报错
+# 🛠️ 配置文件名
+timestamp = int(time.time())
+temp_wav = f"temp_{timestamp}.wav"   # 录音时的临时无损文件
+final_mp3 = f"record_{timestamp}.mp3" # 最终想要生成的 MP3 文件
+
 audio_queue = queue.Queue()
 
 def callback(indata, frames, time_info, status):
     if status:
-        # 如果系统有任何卡顿或警告，实时打印出来，不憋着报错
         print(f"⚠️ 状态警告: {status}", file=sys.stderr)
     audio_queue.put(indata.copy())
 
-print(f"✅ 成功对接 Windows 系统混音通道！")
-print(f"🎛️ 录制目标设备: [{target_device_id}] - {device_info['name']}")
-print(f"🎵 采样率: {sample_rate}Hz | 声道: {channels}")
+print(f"1. 成功对接 Windows 系统混音通道！")
+print(f"2. 录制目标设备: [{target_device_id}] - {device_info['name']}")
+print(f"3. 采样率: {sample_rate}Hz | 声道: {channels}")
 
 try:
-    # 🛠️ 核心修正：显式指定 blocksize（缓冲区大小），防止一秒断开
     with sd.InputStream(samplerate=sample_rate, 
                          device=target_device_id, 
                          channels=channels, 
-                         blocksize=4096,  # 增大缓冲区，稳定音频流
+                         blocksize=4096, 
                          callback=callback):
         
-        with sf.SoundFile(filename, mode='x', samplerate=sample_rate, channels=channels) as file:
-            print("\n▶️ 开始持续内录！请播放电脑里的声音...")
-            print("按 Ctrl + C 可以随时停止录音并保存。")
+        # 先录制到临时 WAV 文件中
+        with sf.SoundFile(temp_wav, mode='x', samplerate=sample_rate, channels=channels) as file:
+            print("4. 开始持续内录！请播放电脑里的声音...")
+            print("按 Ctrl + C 可以随时停止录音并保存为 MP3。")
             
             while True:
-                # 阻塞式获取数据并写入，确保主线程不退出
-                data = audio_queue.get()
-                file.write(data)
+                file.write(audio_queue.get())
 
 except KeyboardInterrupt:
-    print(f"\n🛑 录音捕获结束！文件已成功保存至: {filename}")
+    print("5. 录音捕获结束！正在全力转换为 MP3 格式，请稍候...")
+    
+    try:
+        # 🛠️ 核心逻辑：读取临时 WAV，压缩并导出为标准 MP3
+        sound = AudioSegment.from_wav(temp_wav)
+        # bitrate="192k" 是高音质 MP3 的标准（如果想要更高，可以改为 320k）
+        sound.export(final_mp3, format="mp3", bitrate="192k")
+        
+        # 转换成功后，删除无用的临时 WAV 文件
+        if os.path.exists(temp_wav):
+            os.remove(temp_wav)
+            
+        print(f"6. 精彩！音频已成功转换为压缩格式，保存至: {final_mp3}")
+        
+    except Exception as conv_err:
+        print(f"❌ WAV 转 MP3 失败。请检查是否安装了 FFmpeg。错误信息: {conv_err}")
+        print(f"💡 临时的无损录音文件仍保留在: {temp_wav}")
+
 except Exception as e:
     print(f"\n❌ 录音中途意外中断。错误信息: {e}")
